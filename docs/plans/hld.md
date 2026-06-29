@@ -226,8 +226,9 @@ discussion has an accurate picture, and are scheduled in
   DaisyUI `cupcake` theme ([ADR-0006](./adr/ADR-0006-daisyui-cupcake-theme.md)),
   synthesized Web Audio ([ADR-0007](./adr/ADR-0007-web-audio-synthesis.md)), and the
   vitest suite are all in (see [`CLAUDE.md` §15](../../CLAUDE.md)).
-- **User-facing strings are still inlined in JSX**, not yet centralized in
-  `src/i18n/strings.ts` → Phase 4.
+- **User-facing strings are centralized** in `src/i18n/strings.ts`, consumed via
+  `useStrings()`; the active `locale` is persisted in `AppSettingsContext`
+  (Phase 4). `th` is a structural stub — real Thai is Phase 8.
 - **`GameStatus 'won'` is unreachable** — no reducer transition sets it (the game
   is endless until you lose); `Play.tsx` already has the win UI → resolve in
   Phase 5 (add a win condition or drop the branch).

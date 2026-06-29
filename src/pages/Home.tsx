@@ -3,45 +3,50 @@ import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
+import { useStrings } from '@/i18n/useStrings'
 import { motion } from 'framer-motion'
 
-const FEATURES = [
-  { icon: '✋', title: 'Show with fingers', text: 'Hold up your hand and the camera reads the number of fingers in real time.' },
-  { icon: '🧮', title: 'Mental math', text: 'Addition, subtraction and times tables that grow harder as you score more.' },
-  { icon: '🎉', title: 'Friendly & fun', text: 'Cheerful colors, sounds and badges designed for kids and classrooms.' },
-]
+// Emoji are universal; pair them positionally with the i18n feature copy.
+const FEATURE_ICONS = ['✋', '🧮', '🎉'] as const
 
 export function Home() {
   const audio = useAudio()
   const { onboardingDismissed, dismissOnboarding } = useAppSettings()
+  const t = useStrings()
+  const onb = t.home.onboarding
+
   return (
     <div className="space-y-10">
       <section className="text-center">
         <h1 className="font-display text-4xl font-extrabold text-primary sm:text-6xl">
-          Math you can <span className="text-accent">hold up</span> ✋
+          {t.home.heroLead}
+          <span className="text-accent">{t.home.heroEmphasis}</span>
+          {t.home.heroSuffix}
         </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-base-content/70">
-          SmartHand Math turns your webcam into a controller. Answer mental-math
-          questions by showing fingers to the camera — no keyboard, no mouse, just hands.
-        </p>
+        <p className="mx-auto mt-4 max-w-2xl text-lg text-base-content/70">{t.home.heroSubtitle}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link to="/play">
-            <Button size="lg" variant="primary" onClick={() => audio.playClick()}>▶️ Play now</Button>
+            <Button size="lg" variant="primary" onClick={() => audio.playClick()}>
+              {t.home.ctaPlay}
+            </Button>
           </Link>
           <Link to="/learn">
-            <Button size="lg" variant="secondary" onClick={() => audio.playClick()}>✋ Learn the gestures</Button>
+            <Button size="lg" variant="secondary" onClick={() => audio.playClick()}>
+              {t.home.ctaLearn}
+            </Button>
           </Link>
         </div>
         {!onboardingDismissed && (
           <div className="mx-auto mt-6 flex max-w-xl items-start gap-3 rounded-2xl bg-base-200 p-4 text-left text-sm text-base-content/80">
             <span className="text-2xl">📸</span>
             <div className="flex-1">
-              <p className="font-display font-bold text-base-content">How it works</p>
+              <p className="font-display font-bold text-base-content">{onb.title}</p>
               <p className="mt-1">
-                Tap <span className="font-semibold">Start</span> on the Play or Learn page to turn
-                on your camera. Everything runs right here in your browser —{' '}
-                <span className="font-semibold">the video never leaves your device.</span> (Camera
-                access needs HTTPS or localhost.)
+                {onb.bodyStart}
+                <span className="font-semibold">{onb.bodyEmphasis1}</span>
+                {onb.bodyMid}
+                <span className="font-semibold">{onb.bodyEmphasis2}</span>
+                {onb.bodyEnd}
               </p>
             </div>
             <button
@@ -50,7 +55,7 @@ export function Home() {
                 audio.playClick()
                 dismissOnboarding()
               }}
-              aria-label="Dismiss"
+              aria-label={onb.dismissAria}
             >
               ✕
             </button>
@@ -59,7 +64,7 @@ export function Home() {
       </section>
 
       <section className="grid gap-4 sm:grid-cols-3">
-        {FEATURES.map((f, i) => (
+        {t.home.features.map((f, i) => (
           <motion.div
             key={f.title}
             initial={{ opacity: 0, y: 12 }}
@@ -67,7 +72,7 @@ export function Home() {
             transition={{ delay: i * 0.08, duration: 0.3 }}
           >
             <Card className="text-center">
-              <div className="text-5xl">{f.icon}</div>
+              <div className="text-5xl">{FEATURE_ICONS[i]}</div>
               <h3 className="mt-2 font-display text-xl font-bold">{f.title}</h3>
               <p className="mt-1 text-base-content/70">{f.text}</p>
             </Card>

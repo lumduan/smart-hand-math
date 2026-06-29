@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react'
 import { useHandTracker } from '@/hooks/useHandTracker'
 import { useAudio } from '@/hooks/useAudio'
 import { useAppSettings } from '@/context/AppSettingsContext'
+import { useStrings } from '@/i18n/useStrings'
 import { handsToNumber, type TrackedHand } from '@/utils/fingerMathLogic'
 
 /** MediaPipe hand skeleton edges, used to draw the landmark overlay. */
@@ -38,6 +39,7 @@ interface CameraViewProps {
 export function CameraView({ onNumberChange, numHands = 2, className = '' }: CameraViewProps) {
   const { mirrored, setCameraPermission } = useAppSettings()
   const audio = useAudio()
+  const t = useStrings()
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const recentValues = useRef<number[]>([])
@@ -129,12 +131,12 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
       {/* HUD (never mirrored) */}
       <div className="absolute inset-0 flex flex-col items-center justify-between p-3 pointer-events-none">
         <div className="flex w-full items-center justify-between">
-          {status === 'idle' && <span className="badge badge-ghost font-display">📷 Camera off</span>}
+          {status === 'idle' && <span className="badge badge-ghost font-display">{t.camera.off}</span>}
           {status === 'loading' && (
-            <span className="badge badge-warning font-display animate-pulse">⏳ Loading…</span>
+            <span className="badge badge-warning font-display animate-pulse">{t.camera.loading}</span>
           )}
-          {status === 'ready' && <span className="badge badge-success font-display">● Tracking</span>}
-          {status === 'error' && <span className="badge badge-error font-display">⛔ Camera blocked</span>}
+          {status === 'ready' && <span className="badge badge-success font-display">{t.camera.ready}</span>}
+          {status === 'error' && <span className="badge badge-error font-display">{t.camera.blocked}</span>}
         </div>
 
         <div className="pointer-events-auto">
@@ -145,7 +147,7 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
                 audio.playClick()
                 void start()
               }}
-              aria-label="Start camera"
+              aria-label={t.camera.startAria}
             >
               ▶️
             </button>
@@ -156,7 +158,7 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
                 audio.playClick()
                 stop()
               }}
-              aria-label="Stop camera"
+              aria-label={t.camera.stopAria}
             >
               ⏹️
             </button>
@@ -166,11 +168,8 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
 
       {error && (
         <div className="absolute bottom-2 left-2 right-2 rounded-xl bg-error/90 p-3 text-center text-sm text-white">
-          <p className="font-display font-bold">⛔ Camera blocked</p>
-          <p className="mt-1">
-            {error}. Allow camera access in your browser, then tap ▶️ to try again. (Camera needs
-            HTTPS or localhost.)
-          </p>
+          <p className="font-display font-bold">{t.camera.errorTitle}</p>
+          <p className="mt-1">{t.camera.errorBody(error)}</p>
         </div>
       )}
     </div>

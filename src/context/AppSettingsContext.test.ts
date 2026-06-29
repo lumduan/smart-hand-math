@@ -18,6 +18,8 @@ describe('useAppSettings defaults', () => {
     expect(result.current.muted).toBe(false)
     expect(result.current.mirrored).toBe(true)
     expect(result.current.cameraPermission).toBe('prompt')
+    expect(result.current.locale).toBe('en')
+    expect(result.current.onboardingDismissed).toBe(false)
   })
 })
 
@@ -76,6 +78,33 @@ describe('persistence', () => {
     const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
     expect(result.current.volume).toBe(expectedDefaultVolume)
     expect(result.current.muted).toBe(false)
+  })
+})
+
+describe('locale', () => {
+  it('defaults to en and switches via setLocale', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.locale).toBe('en')
+    act(() => result.current.setLocale('th'))
+    expect(result.current.locale).toBe('th')
+  })
+
+  it('persists locale to localStorage', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    act(() => result.current.setLocale('th'))
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({ locale: 'th' })
+  })
+
+  it('hydrates a persisted locale', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale: 'th' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.locale).toBe('th')
+  })
+
+  it('coerces an unsupported persisted locale back to en', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale: 'fr' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.locale).toBe('en')
   })
 })
 

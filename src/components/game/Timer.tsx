@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAudio } from '@/hooks/useAudio'
+import { useStrings } from '@/i18n/useStrings'
 
 interface TimerProps {
   /** Countdown duration in seconds. Restart by changing the `key` of the component. */
@@ -17,6 +18,7 @@ export function Timer({ seconds, running = true, onExpire }: TimerProps) {
   }, [onExpire])
 
   const audio = useAudio()
+  const t = useStrings()
   // Tick during the final, urgent seconds.
   useEffect(() => {
     if (running && remaining > 0 && remaining <= 5) audio.playTick()
@@ -43,7 +45,7 @@ export function Timer({ seconds, running = true, onExpire }: TimerProps) {
     <div
       className={`badge badge-lg font-display tabular-nums ${urgent ? 'badge-error animate-pulse' : 'badge-ghost'}`}
     >
-      ⏱ {remaining}s
+      {t.game.timer(remaining)}
     </div>
   )
 }

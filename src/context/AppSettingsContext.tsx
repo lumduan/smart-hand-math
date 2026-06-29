@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { toLocale, type Locale } from '@/i18n/strings'
 
 export type CameraPermission = 'prompt' | 'granted' | 'denied'
 
@@ -8,11 +9,13 @@ interface AppSettings {
   muted: boolean
   mirrored: boolean // selfie view (default true)
   onboardingDismissed: boolean // first-visit "how it works" banner
+  locale: Locale // active UI language
   setCameraPermission: (p: CameraPermission) => void
   setVolume: (v: number) => void
   toggleMuted: () => void
   toggleMirrored: () => void
   dismissOnboarding: () => void
+  setLocale: (locale: Locale) => void
 }
 
 const STORAGE_KEY = 'smartmath.settings'
@@ -22,6 +25,7 @@ interface PersistedSettings {
   muted: boolean
   mirrored: boolean
   onboardingDismissed: boolean
+  locale: Locale
 }
 
 const AppSettingsContext = createContext<AppSettings | null>(null)
@@ -32,11 +36,13 @@ function loadPersisted(): PersistedSettings {
     muted: false,
     mirrored: true,
     onboardingDismissed: false,
+    locale: 'en',
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return fallback
-    return { ...fallback, ...(JSON.parse(raw) as Partial<PersistedSettings>) }
+    const parsed = JSON.parse(raw) as Partial<PersistedSettings>
+    return { ...fallback, ...parsed, locale: toLocale(parsed.locale) }
   } catch {
     return fallback
   }
@@ -46,7 +52,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [persisted, setPersisted] = useState<PersistedSettings>(loadPersisted)
   const [cameraPermission, setCameraPermission] = useState<CameraPermission>('prompt')
 
-  // Persist the audio/mirror/onboarding prefs whenever they change.
+  // Persist the audio/mirror/onboarding/locale prefs whenever they change.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
@@ -71,6 +77,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPersisted((prev) => ({ ...prev, onboardingDismissed: true }))
   }, [])
 
+  const setLocale = useCallback((locale: Locale) => {
+    setPersisted((prev) => ({ ...prev, locale }))
+  }, [])
+
   const value = useMemo<AppSettings>(
     () => ({
       cameraPermission,
@@ -78,13 +88,15 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       muted: persisted.muted,
       mirrored: persisted.mirrored,
       onboardingDismissed: persisted.onboardingDismissed,
+      locale: persisted.locale,
       setCameraPermission,
       setVolume,
       toggleMuted,
       toggleMirrored,
       dismissOnboarding,
+      setLocale,
     }),
-    [cameraPermission, persisted, setVolume, toggleMuted, toggleMirrored, dismissOnboarding],
+    [cameraPermission, persisted, setVolume, toggleMuted, toggleMirrored, dismissOnboarding, setLocale],
   )
 
   return <AppSettingsContext.Provider value={value}>{children}</AppSettingsContext.Provider>

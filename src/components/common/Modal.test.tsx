@@ -2,10 +2,14 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Modal } from '@/components/common/Modal'
+import { AppSettingsProvider } from '@/context/AppSettingsContext'
+
+// Modal reads strings via useStrings → needs the settings provider.
+const renderModal = (ui: Parameters<typeof render>[0]) => render(ui, { wrapper: AppSettingsProvider })
 
 describe('Modal', () => {
   it('renders nothing when closed', () => {
-    const { container } = render(
+    const { container } = renderModal(
       <Modal open={false} onClose={() => {}}>
         body
       </Modal>,
@@ -14,7 +18,7 @@ describe('Modal', () => {
   })
 
   it('renders title, children, Close button, and backdrop when open', () => {
-    render(
+    renderModal(
       <Modal open onClose={() => {}} title="Game over">
         body
       </Modal>,
@@ -26,7 +30,7 @@ describe('Modal', () => {
   })
 
   it('hides the Close button and backdrop when dismissable is false', () => {
-    render(
+    renderModal(
       <Modal open dismissable={false} onClose={() => {}}>
         body
       </Modal>,
@@ -38,7 +42,7 @@ describe('Modal', () => {
   it('calls onClose when the Close button is clicked', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
-    render(
+    renderModal(
       <Modal open onClose={onClose}>
         body
       </Modal>,
@@ -50,7 +54,7 @@ describe('Modal', () => {
   it('calls onClose when the backdrop is clicked', async () => {
     const user = userEvent.setup()
     const onClose = vi.fn()
-    render(
+    renderModal(
       <Modal open onClose={onClose}>
         body
       </Modal>,

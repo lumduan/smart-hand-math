@@ -68,10 +68,10 @@
 > *Zero inlined user-facing strings; English complete, Thai-ready.*
 > ROADMAP: [§Phase 4](./ROADMAP.md#phase-4--internationalization-i18n)
 
-- [ ] Extract all inlined strings → **`src/i18n/strings.ts`** (typed dictionary)
-- [ ] `useStrings()` hook + locale context
-- [ ] Active locale persisted in `localStorage`
-- [ ] English (`en`) 100% complete; `th` structure stubbed (content is Phase 8)
+- [x] Extract all inlined strings → **`src/i18n/strings.ts`** (typed dictionary)
+- [x] `useStrings()` hook + locale context
+- [x] Active locale persisted in `localStorage`
+- [x] English (`en`) 100% complete; `th` structure stubbed (content is Phase 8)
 
 ---
 

@@ -3,8 +3,10 @@ import { MainLayout } from '@/layouts/MainLayout'
 import { Home } from '@/pages/Home'
 import { Learn } from '@/pages/Learn'
 import { Play } from '@/pages/Play'
+import { useDocumentMeta } from '@/i18n/useDocumentMeta'
 
 export default function App() {
+  useDocumentMeta()
   return (
     <Routes>
       <Route element={<MainLayout />}>

@@ -8,6 +8,7 @@ import { LevelBadge } from '@/components/game/LevelBadge'
 import { ScoreBoard } from '@/components/game/ScoreBoard'
 import { useGame } from '@/context/GameContext'
 import { useAudio } from '@/hooks/useAudio'
+import { useStrings } from '@/i18n/useStrings'
 import { motion } from 'framer-motion'
 import { burst, celebrate } from '@/utils/confetti'
 
@@ -34,6 +35,7 @@ export function Play() {
     reset,
   } = useGame()
   const audio = useAudio()
+  const t = useStrings()
   const [detected, setDetected] = useState<number>(-1)
   const [padValue, setPadValue] = useState('')
 
@@ -90,36 +92,33 @@ export function Play() {
       audio.playWrong()
     }
     const delay = lastAnswer.correct ? 900 : 1500
-    const t = setTimeout(() => next(), delay)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => next(), delay)
+    return () => clearTimeout(timer)
   }, [lastAnswer, status, audio, next, streak])
 
   const gameOver = status === 'lost' || status === 'won'
 
-  // ---- Idle / start screen -------------------------------------------------
+  // ---- Idle / Start screen -------------------------------------------------
   if (status === 'idle') {
     return (
       <div className="mx-auto max-w-xl text-center">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <Card>
-            <h1 className="font-display text-3xl font-extrabold text-primary">Ready to play?</h1>
-          <p className="mt-2 text-base-content/70">
-            Answer each question by holding up the right number of fingers. You have{' '}
-            {STARTING_LIVES} lives — how high can you score?
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Button
-              size="lg"
-              variant="primary"
-              onClick={() => {
-                audio.playClick()
-                start()
-              }}
-            >
-              ▶️ Start game
-            </Button>
-          </div>
-        </Card>
+            <h1 className="font-display text-3xl font-extrabold text-primary">{t.play.idleTitle}</h1>
+            <p className="mt-2 text-base-content/70">{t.play.idleBody(STARTING_LIVES)}</p>
+            <div className="mt-6 flex justify-center">
+              <Button
+                size="lg"
+                variant="primary"
+                onClick={() => {
+                  audio.playClick()
+                  start()
+                }}
+              >
+                {t.play.idleCta}
+              </Button>
+            </div>
+          </Card>
         </motion.div>
       </div>
     )
@@ -141,9 +140,10 @@ export function Play() {
 
       {currentQuestion && (
         <Card className="items-center text-center">
-          <p className="font-display text-base-content/60">Show the answer with your fingers</p>
+          <p className="font-display text-base-content/60">{t.play.prompt}</p>
           <div className="my-2 font-display text-7xl font-extrabold text-primary">
-            {currentQuestion.text} = ?
+            {currentQuestion.text}
+            {t.play.answerSuffix}
           </div>
 
           {lastAnswer ? (
@@ -158,12 +158,12 @@ export function Play() {
               transition={{ duration: 0.4 }}
             >
               {lastAnswer.correct
-                ? `✅ Correct! It's ${lastAnswer.expected}`
-                : `❌ Oops, you showed ${lastAnswer.given}. It's ${lastAnswer.expected}`}
+                ? t.play.correct(lastAnswer.expected)
+                : t.play.wrong(lastAnswer.given, lastAnswer.expected)}
             </motion.div>
           ) : (
             <div className="badge badge-lg badge-ghost font-display">
-              {detected < 0 ? '✋ Waiting for your hand…' : `You're showing ${detected}`}
+              {detected < 0 ? t.play.waiting : t.play.showing(detected)}
             </div>
           )}
         </Card>
@@ -174,7 +174,7 @@ export function Play() {
 
         {/* Fallback number entry for accessibility / no-camera testing */}
         <Card>
-          <p className="font-display font-bold">No camera? Type your answer (0–99):</p>
+          <p className="font-display font-bold">{t.play.padTitle}</p>
           <form
             className="mt-3 flex items-center gap-2"
             onSubmit={(e) => {
@@ -191,8 +191,8 @@ export function Play() {
               disabled={!!lastAnswer}
               onChange={(e) => setPadValue(e.target.value)}
               className="input input-bordered w-24 font-display text-lg"
-              placeholder="?"
-              aria-label="Type your answer"
+              placeholder={t.play.padPlaceholder}
+              aria-label={t.play.padAria}
             />
             <Button
               type="submit"
@@ -200,22 +200,24 @@ export function Play() {
               disabled={!!lastAnswer || padValue === ''}
               onClick={() => audio.playClick()}
             >
-              Submit
+              {t.play.padSubmit}
             </Button>
           </form>
-          <p className="mt-3 text-sm text-base-content/60">
-            With the camera, hold the right finger value in view for ~½ second to auto-answer.
-            Left hand = tens, right hand = ones (e.g. 3 on the left + 7 on the right = 37).
-          </p>
+          <p className="mt-3 text-sm text-base-content/60">{t.play.padHelper}</p>
         </Card>
       </div>
 
-      <Modal open={gameOver} onClose={reset} dismissable={false} title={status === 'won' ? '🎉 You won!' : '💀 Game over'}>
+      <Modal
+        open={gameOver}
+        onClose={reset}
+        dismissable={false}
+        title={status === 'won' ? t.play.modalWon : t.play.modalLost}
+      >
         <div className="text-center">
           <p className="font-display text-2xl">
-            You scored <span className="font-bold text-primary">{score}</span>
+            {t.play.youScored} <span className="font-bold text-primary">{score}</span>
           </p>
-          <p className="text-base-content/60">Best: {best}</p>
+          <p className="text-base-content/60">{t.play.bestLabel(best)}</p>
           <div className="mt-5 flex justify-center gap-3">
             <Button
               variant="primary"
@@ -224,10 +226,10 @@ export function Play() {
                 start()
               }}
             >
-              🔁 Play again
+              {t.play.playAgain}
             </Button>
             <Link to="/">
-              <Button variant="ghost">🏠 Home</Button>
+              <Button variant="ghost">{t.play.home}</Button>
             </Link>
           </div>
         </div>

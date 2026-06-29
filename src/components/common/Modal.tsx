@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useStrings } from '@/i18n/useStrings'
 
 export interface ModalProps {
   open: boolean
@@ -12,6 +13,7 @@ export interface ModalProps {
 
 /** Accessible DaisyUI modal controlled by the `open` prop, with enter/exit motion. */
 export function Modal({ open, onClose, title, children, dismissable = true }: ModalProps) {
+  const t = useStrings()
   return (
     <AnimatePresence>
       {open && (
@@ -34,13 +36,13 @@ export function Modal({ open, onClose, title, children, dismissable = true }: Mo
             <div className="modal-action">
               {dismissable && (
                 <button className="btn btn-ghost" onClick={onClose}>
-                  Close
+                  {t.common.close}
                 </button>
               )}
             </div>
           </motion.div>
           {dismissable && (
-            <button className="modal-backdrop bg-black/40" aria-label="Close modal" onClick={onClose} />
+            <button className="modal-backdrop bg-black/40" aria-label={t.common.closeAria} onClick={onClose} />
           )}
         </motion.div>
       )}
