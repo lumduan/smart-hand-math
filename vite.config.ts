@@ -15,6 +15,11 @@ export default defineConfig({
     host: true, // reachable inside the Docker dev container
     port: 5173,
     strictPort: true,
+    // Vite 5.4+ blocks non-localhost Host headers by default (DNS-rebinding
+    // guard). Allow the Cloudflare-proxied domain used to reach this dev
+    // server over HTTPS. (localhost/127.0.0.1 always allowed, so the SSH-tunnel
+    // path still works.)
+    allowedHosts: ['hand.candythink.com'],
     watch: {
       // polling is more reliable across the Docker bind-mount boundary
       usePolling: true,
