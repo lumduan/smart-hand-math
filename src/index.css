@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-base-200 text-base-content antialiased;
+  }
+
+  /* Prevent the page from bouncing while kids show fingers at the camera */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}

@@ -1,0 +1,36 @@
+name: 🐛 Bug report
+description: Something isn't working as expected
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected to happen.
+      placeholder: "Steps to reproduce: 1) ... 2) ..."
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Mode
+      options:
+        - Play (math game)
+        - Learn (gesture playground)
+        - Home / navigation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device / browser
+      placeholder: "e.g. Chrome on Windows laptop"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console output
+      description: Paste any errors from the browser console.
+      render: shell

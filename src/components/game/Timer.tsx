@@ -1,0 +1,42 @@
+import { useEffect, useRef, useState } from 'react'
+
+interface TimerProps {
+  /** Countdown duration in seconds. Restart by changing the `key` of the component. */
+  seconds: number
+  running?: boolean
+  onExpire?: () => void
+}
+
+/** Simple countdown timer display. */
+export function Timer({ seconds, running = true, onExpire }: TimerProps) {
+  const [remaining, setRemaining] = useState(seconds)
+  const onExpireRef = useRef(onExpire)
+  useEffect(() => {
+    onExpireRef.current = onExpire
+  }, [onExpire])
+
+  useEffect(() => {
+    setRemaining(seconds)
+    if (!running) return
+    const id = setInterval(() => {
+      setRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(id)
+          onExpireRef.current?.()
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [seconds, running])
+
+  const urgent = remaining <= 5
+  return (
+    <div
+      className={`badge badge-lg font-display tabular-nums ${urgent ? 'badge-error animate-pulse' : 'badge-ghost'}`}
+    >
+      ⏱ {remaining}s
+    </div>
+  )
+}

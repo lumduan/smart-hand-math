@@ -1,0 +1,21 @@
+name: ✨ Feature request
+description: Suggest a new game mode, gesture, or improvement
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like to see, and why?
+    validations:
+      required: true
+  - type: dropdown
+    id: audience
+    attributes:
+      label: Mostly for
+      options:
+        - Kids (players)
+        - Parents / teachers
+        - Both
+    validations:
+      required: false

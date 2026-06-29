@@ -1,0 +1,37 @@
+# Development orchestrator: runs Vite with HMR inside the container and
+# bind-mounts the source so changes on the host hot-reload instantly.
+#
+#   docker compose up        # start dev server
+#   docker compose up --build   # rebuild image after dependency changes
+#
+# Production build/preview:
+#   docker compose --profile prod up
+services:
+  dev:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+    ports:
+      - "5173:5173"
+    volumes:
+      # Live source mount (HMR)
+      - ./:/app
+      # Keep container's node_modules isolated from the host
+      - dev_node_modules:/app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_MEDIAPIPE_MODEL_URL=https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
+      - VITE_MEDIAPIPE_WASM_URL=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm
+    stdin_open: true
+    tty: true
+
+  prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+
+volumes:
+  dev_node_modules:
