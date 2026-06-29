@@ -1,0 +1,3 @@
+# Drop real MediaPipe hand-landmark captures (*.json) from
+# docs/plans/hand-tracking/PoC/capture.html into this directory.
+# They are consumed by src/utils/fingerMathLogic.real.test.ts.

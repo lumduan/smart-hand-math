@@ -81,28 +81,28 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 2.1 Test Infrastructure
 
-- [ ] Add **vitest** + jsdom + `@testing-library/react`
-- [ ] `test` script in `package.json` + coverage threshold
-- [ ] Wire `test` into CI (`ci.yml`)
+- [x] Add **vitest** + jsdom + `@testing-library/react`
+- [x] `test` script in `package.json` + coverage threshold
+- [x] Wire `test` into CI (`ci.yml`)
 
 ### 2.2 Finger-Logic Tests
 
-- [ ] Unit tests for `fingerMathLogic`: `handValue` (0–9), `handsToNumber` (0–99), `anatomicalHand`, `getFingerStates`
-- [ ] Synthetic 21-landmark fixtures for each digit 0–9 and tens/ones combos
+- [x] Unit tests for `fingerMathLogic`: `handValue` (0–9), `handsToNumber` (0–99), `anatomicalHand`, `getFingerStates`
+- [x] Synthetic 21-landmark fixtures for each digit 0–9 and tens/ones combos
 
 ### 2.3 Math-Generator Tests
 
-- [ ] Unit tests for `mathGenerator`: per-difficulty answer-range invariants (easy 0–9 / medium 0–50 / hard 0–99), no out-of-range answers, `id` uniqueness
+- [x] Unit tests for `mathGenerator`: per-difficulty answer-range invariants (easy 0–9 / medium 0–50 / hard 0–99), no out-of-range answers, `id` uniqueness
 
 ### 2.4 Component & Context Tests
 
-- [ ] Component tests: `ScoreBoard`, `LevelBadge`, `Timer`, `Modal`, `Button`
-- [ ] `GameContext` reducer tests: `START` / `ANSWER` / `NEXT` / `RESET`, lives→`lost`
-- [ ] `AppSettingsContext` tests: persistence via `localStorage` mock
+- [x] Component tests: `ScoreBoard`, `LevelBadge`, `Timer`, `Modal`, `Button`
+- [x] `GameContext` reducer tests: `START` / `ANSWER` / `NEXT` / `RESET`, lives→`lost`
+- [x] `AppSettingsContext` tests: persistence via `localStorage` mock
 
 ### 2.5 Hardware Verification (PoC)
 
-- [ ] `docs/plans/hand-tracking/PoC/` — capture real landmark samples, verify `INVERT_HANDEDNESS` default, tune distance thresholds
+- [~] `docs/plans/hand-tracking/PoC/` — capture tool + real-fixture consumer tests scaffolded; **real landmark capture pending** (needs a webcam + hands), then verify `INVERT_HANDEDNESS` default + tune thresholds
 - [ ] Confirm tens/ones mapping (left = tens, right = ones) across ≥ 2 hand orientations/lighting
 - [ ] ADR-0005 (or RFC) recording the final threshold values
 
@@ -262,7 +262,8 @@ Phase 0 (Bootstrap)
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
+  - Phase 2.1–2.4 — vitest + jsdom + RTL; finger-logic / math-generator / component / context tests (114 passing); `src/utils` coverage gate met; `test` wired into CI
 - **In progress:**
-  - nothing
-- **Known follow-ups (from `CLAUDE.md` §15):** verify `INVERT_HANDEDNESS` on real hardware; add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19; add a test runner
+  - Phase 2.5 — hardware PoC: capture tool + real-fixture consumer tests scaffolded; awaiting real landmark capture (webcam + hands) + ADR-0005
+- **Known follow-ups (from `CLAUDE.md` §15):** verify `INVERT_HANDEDNESS` on real hardware; add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19
 - **Blocked by:** nothing

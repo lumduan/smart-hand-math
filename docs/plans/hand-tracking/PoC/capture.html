@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SmartHand Math — landmark capture (PoC)</title>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 1.5rem; background: #f7f3ff; color: #1f2937; }
+      h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+      .note { color: #6b7280; font-size: 0.85rem; max-width: 46rem; }
+      .row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin: 1rem 0; }
+      .stage { position: relative; width: 480px; max-width: 100%; aspect-ratio: 4 / 3; background: #111; border-radius: 1rem; overflow: hidden; }
+      video, canvas { position: absolute; inset: 0; width: 100%; height: 100%; transform: scaleX(-1); /* selfie mirror */ }
+      .pill { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; background: #e9d5ff; font-size: 0.8rem; }
+      button { font: inherit; padding: 0.5rem 0.9rem; border: 0; border-radius: 999px; background: #6d28d9; color: #fff; cursor: pointer; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      input[type=text], input[type=number] { font: inherit; padding: 0.4rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
+      label { font-size: 0.85rem; }
+      pre { background: #111827; color: #e5e7eb; padding: 0.75rem; border-radius: 0.5rem; overflow: auto; max-width: 46rem; font-size: 0.75rem; }
+      .ok { color: #047857; } .bad { color: #b91c1c; }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <h1>✋ Landmark capture — SmartHand Math PoC</h1>
+    <p class="note">
+      Records raw MediaPipe <code>HandLandmarker</code> output (21 landmarks +
+      the <strong>raw</strong> <code>Left</code>/<code>Right</code> label + score
+      per hand) to a JSON file you drop into
+      <code>src/test/fixtures/hand-tracking/</code>. Those captures then drive
+      <code>fingerMathLogic.real.test.ts</code>, which verifies the gesture→number
+      mapping on real hands and confirms the <code>INVERT_HANDEDNESS</code>
+      default. Nothing is uploaded — the camera frame is processed in-page only.
+    </p>
+    <p class="note">
+      <strong>Run over <code>localhost</code></strong> (a secure context, required
+      for camera access), e.g. from the repo root:
+      <code>python3 -m http.server 8080</code> then open
+      <code>http://localhost:8080/docs/plans/hand-tracking/PoC/capture.html</code>.
+    </p>
+
+    <div class="row">
+      <button id="start">▶️ Start camera</button>
+      <span class="pill" id="status">idle</span>
+      <span class="note" id="fps"></span>
+    </div>
+
+    <div class="stage">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="row">
+      <label>Label (filename)
+        <input id="label" type="text" value="left-3" />
+      </label>
+      <label>Intended number (0–99)
+        <input id="intended" type="number" min="0" max="99" value="30" />
+      </label>
+      <button id="capture" disabled>⬇️ Capture sample</button>
+    </div>
+
+    <div id="live" class="note">No hand yet.</div>
+    <pre id="json">—</pre>
+
+    <script type="module">
+      import { HandLandmarker, FilesetResolver } from '@mediapipe/tasks-vision'
+
+      const MODEL_URL =
+        'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
+      const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm'
+
+      // 21-landmark skeleton edges (mirrors the app's CameraView overlay).
+      const HAND_CONNECTIONS = [
+        [0,1],[1,2],[2,3],[3,4],            // thumb
+        [0,5],[5,6],[6,7],[7,8],            // index
+        [5,9],[9,10],[10,11],[11,12],       // middle
+        [9,13],[13,14],[14,15],[15,16],     // ring
+        [13,17],[17,18],[18,19],[19,20],    // pinky
+        [0,17],                             // palm base
+      ]
+
+      const video = document.getElementById('video')
+      const canvas = document.getElementById('canvas')
+      const ctx = canvas.getContext('2d')
+      const statusEl = document.getElementById('status')
+      const liveEl = document.getElementById('live')
+      const jsonEl = document.getElementById('json')
+      const fpsEl = document.getElementById('fps')
+
+      let landmarker = null
+      let stream = null
+      let rafId = null
+      let lastVideoTime = -1
+      let lastResult = null   // { hands: [{landmarks, handedness, score}] }
+      let frame = 0
+      let lastTs = performance.now()
+
+      function setStatus(text, cls) {
+        statusEl.textContent = text
+        statusEl.className = 'pill ' + (cls || '')
+      }
+
+      async function start() {
+        document.getElementById('start').disabled = true
+        setStatus('loading…')
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 }, audio: false })
+          video.srcObject = stream
+          await video.play()
+
+          const fileset = await FilesetResolver.forVisionTasks(WASM_URL)
+          try {
+            landmarker = await HandLandmarker.createFromOptions(fileset, {
+              baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+              runningMode: 'VIDEO',
+              numHands: 2,
+            })
+          } catch (gpuErr) {
+            console.warn('GPU delegate failed, falling back to CPU', gpuErr)
+            landmarker = await HandLandmarker.createFromOptions(fileset, {
+              baseOptions: { modelAssetPath: MODEL_URL, delegate: 'CPU' },
+              runningMode: 'VIDEO',
+              numHands: 2,
+            })
+          }
+          setStatus('tracking', 'ok')
+          loop()
+        } catch (err) {
+          console.error(err)
+          setStatus('error', 'bad')
+          liveEl.innerHTML = '<span class="bad">Could not start: ' + (err?.message || err) +
+            '. Camera needs a secure context (localhost or HTTPS) and permission.</span>'
+          document.getElementById('start').disabled = false
+        }
+      }
+
+      function loop() {
+        rafId = requestAnimationFrame(loop)
+        if (video.readyState < 2) return
+        const ts = performance.now()
+        if (video.currentTime === lastVideoTime) return
+        lastVideoTime = video.currentTime
+        const result = landmarker.detectForVideo(video, ts)
+
+        // Normalise into the exact shape the tests consume.
+        const hands = []
+        const n = result?.landmarks?.length || 0
+        for (let i = 0; i < n; i++) {
+          const cat = result.handedness?.[i]?.[0]
+          hands.push({
+            landmarks: result.landmarks[i],
+            handedness: cat?.categoryName === 'Left' ? 'Left' : 'Right', // RAW label (pre-invert)
+            score: cat?.score ?? undefined,
+          })
+        }
+        lastResult = hands.length ? { hands } : null
+
+        // FPS readout (rough).
+        frame++
+        if (ts - lastTs > 1000) {
+          fpsEl.textContent = `${frame} fps · ${hands.length} hand(s)`
+          frame = 0
+          lastTs = ts
+        }
+
+        draw(hands)
+        liveEl.textContent = hands.length
+          ? `raw labels: ${hands.map((h) => h.handedness + '(' + (h.score ?? 0).toFixed(2) + ')').join(', ')}`
+          : 'No hand yet.'
+      }
+
+      function draw(hands) {
+        canvas.width = video.videoWidth
+        canvas.height = video.videoHeight
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.lineWidth = 3
+        ctx.strokeStyle = '#a855f7'
+        ctx.fillStyle = '#f59e0b'
+        for (const hand of hands) {
+          for (const [a, b] of HAND_CONNECTIONS) {
+            ctx.beginPath()
+            ctx.moveTo(hand.landmarks[a].x * canvas.width, hand.landmarks[a].y * canvas.height)
+            ctx.lineTo(hand.landmarks[b].x * canvas.width, hand.landmarks[b].y * canvas.height)
+            ctx.stroke()
+          }
+          for (const p of hand.landmarks) {
+            ctx.beginPath()
+            ctx.arc(p.x * canvas.width, p.y * canvas.height, 3, 0, 2 * Math.PI)
+            ctx.fill()
+          }
+        }
+      }
+
+      function capture() {
+        if (!lastResult) return
+        const label = document.getElementById('label').value.trim() || 'sample'
+        const intended = Number(document.getElementById('intended').value)
+        const fixture = {
+          label,
+          expectedNumber: intended,
+          hands: lastResult.hands,
+        }
+        const json = JSON.stringify(fixture, null, 2)
+        jsonEl.textContent = json
+        const blob = new Blob([json], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${label}.json`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+
+      // Enable Capture only when a hand is visible.
+      const toggleCapture = () => { document.getElementById('capture').disabled = !lastResult }
+      setInterval(toggleCapture, 200)
+
+      document.getElementById('start').addEventListener('click', start)
+      document.getElementById('capture').addEventListener('click', capture)
+    </script>
+  </body>
+</html>

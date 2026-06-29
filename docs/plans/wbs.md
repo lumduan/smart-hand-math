@@ -14,27 +14,27 @@
 > ROADMAP: [§Phase 2](./ROADMAP.md#phase-2--core-engine-verification--quality)
 
 ### 2.1 Test infrastructure
-- [ ] Add **vitest** + **jsdom** + **`@testing-library/react`**
-- [ ] Add `test` script to `package.json` + a coverage threshold
-- [ ] Wire `test` into `.github/workflows/ci.yml`
+- [x] Add **vitest** + **jsdom** + **`@testing-library/react`**
+- [x] Add `test` script to `package.json` + a coverage threshold
+- [x] Wire `test` into `.github/workflows/ci.yml`
 
 ### 2.2 Finger-logic tests — [`src/utils/fingerMathLogic.ts`](../../src/utils/fingerMathLogic.ts)
-- [ ] Unit tests for `handValue` across **0–9** (synthetic 21-landmark fixtures per digit)
-- [ ] Unit tests for `handsToNumber` across **0–99** (tens/ones combos, missing-hand = 0, same-side tie → higher score)
-- [ ] Unit tests for `anatomicalHand` (with/without `INVERT_HANDEDNESS`)
-- [ ] Unit tests for `getFingerStates`
+- [x] Unit tests for `handValue` across **0–9** (synthetic 21-landmark fixtures per digit)
+- [x] Unit tests for `handsToNumber` across **0–99** (tens/ones combos, missing-hand = 0, same-side tie → higher score)
+- [x] Unit tests for `anatomicalHand` (with/without `INVERT_HANDEDNESS`)
+- [x] Unit tests for `getFingerStates`
 
 ### 2.3 Math-generator tests — [`src/utils/mathGenerator.ts`](../../src/utils/mathGenerator.ts)
-- [ ] Per-difficulty answer-range invariants: **easy 0–9 / medium 0–50 / hard 0–99**
-- [ ] No out-of-range answers; `id` uniqueness; `subtraction` never negative
+- [x] Per-difficulty answer-range invariants: **easy 0–9 / medium 0–50 / hard 0–99**
+- [x] No out-of-range answers; `id` uniqueness; `subtraction` never negative
 
 ### 2.4 Component & context tests
-- [ ] `Button`, `Card`, `Modal`, `ScoreBoard`, `LevelBadge`, `Timer`
-- [ ] `GameContext` reducer: `START` / `ANSWER` (correct & wrong) / `NEXT` / `RESET`, `lives → status:'lost'`
-- [ ] `AppSettingsContext`: persistence via a `localStorage` mock
+- [x] `Button`, `Card`, `Modal`, `ScoreBoard`, `LevelBadge`, `Timer`
+- [x] `GameContext` reducer: `START` / `ANSWER` (correct & wrong) / `NEXT` / `RESET`, `lives → status:'lost'`
+- [x] `AppSettingsContext`: persistence via a `localStorage` mock
 
 ### 2.5 Hardware verification (PoC) → ADR-0005
-- [ ] `docs/plans/hand-tracking/PoC/` — capture real landmark samples; verify the `INVERT_HANDEDNESS` default
+- [~] `docs/plans/hand-tracking/PoC/` — capture tool + consumer tests scaffolded; **real capture pending** (webcam + hands), then verify the `INVERT_HANDEDNESS` default
 - [ ] Confirm tens/ones mapping (left=tens, right=ones) across ≥2 orientations/lighting; tune distance thresholds
 - [ ] Record final threshold values + handedness default in **ADR-0005**
 

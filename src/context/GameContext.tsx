@@ -34,20 +34,20 @@ export interface GameState {
   lastAnswer: AnswerResult | null
 }
 
-type Action =
+export type Action =
   | { type: 'START' }
   | { type: 'ANSWER'; given: number }
   | { type: 'NEXT' }
   | { type: 'RESET' }
   | { type: 'HYDRATE_BEST'; best: number }
 
-const STARTING_LIVES = 3
+export const STARTING_LIVES = 3
 
 function levelForScore(score: number): number {
   return Math.floor(score / 5) + 1
 }
 
-function initialState(best = 0): GameState {
+export function initialState(best = 0): GameState {
   return {
     status: 'idle',
     score: 0,
@@ -61,7 +61,7 @@ function initialState(best = 0): GameState {
   }
 }
 
-function reducer(state: GameState, action: Action): GameState {
+export function reducer(state: GameState, action: Action): GameState {
   switch (action.type) {
     case 'HYDRATE_BEST':
       return { ...state, best: action.best }
