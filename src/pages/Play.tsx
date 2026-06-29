@@ -8,6 +8,8 @@ import { LevelBadge } from '@/components/game/LevelBadge'
 import { ScoreBoard } from '@/components/game/ScoreBoard'
 import { useGame } from '@/context/GameContext'
 import { useAudio } from '@/hooks/useAudio'
+import { motion } from 'framer-motion'
+import { burst, celebrate } from '@/utils/confetti'
 
 const STARTING_LIVES = 3
 /** Anti-tremor gate: the answer must be held steady this long before it commits. */
@@ -71,13 +73,26 @@ export function Play() {
   // After each answer: play a sound and advance (unless the game ended).
   useEffect(() => {
     if (!lastAnswer) return
-    if (lastAnswer.correct) audio.playCorrect()
-    else audio.playWrong()
-    if (status === 'lost') return
+    if (status === 'lost') {
+      audio.playLose()
+      return
+    }
+    if (status === 'won') {
+      audio.playWin()
+      celebrate()
+      return
+    }
+    if (lastAnswer.correct) {
+      audio.playCorrect()
+      burst()
+      if (streak > 0 && streak % 5 === 0) celebrate() // streak milestone
+    } else {
+      audio.playWrong()
+    }
     const delay = lastAnswer.correct ? 900 : 1500
     const t = setTimeout(() => next(), delay)
     return () => clearTimeout(t)
-  }, [lastAnswer, status, audio, next])
+  }, [lastAnswer, status, audio, next, streak])
 
   const gameOver = status === 'lost' || status === 'won'
 
@@ -85,18 +100,27 @@ export function Play() {
   if (status === 'idle') {
     return (
       <div className="mx-auto max-w-xl text-center">
-        <Card>
-          <h1 className="font-display text-3xl font-extrabold text-brand-primary">Ready to play?</h1>
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <Card>
+            <h1 className="font-display text-3xl font-extrabold text-primary">Ready to play?</h1>
           <p className="mt-2 text-base-content/70">
             Answer each question by holding up the right number of fingers. You have{' '}
             {STARTING_LIVES} lives — how high can you score?
           </p>
           <div className="mt-6 flex justify-center">
-            <Button size="lg" variant="primary" onClick={start}>
+            <Button
+              size="lg"
+              variant="primary"
+              onClick={() => {
+                audio.playClick()
+                start()
+              }}
+            >
               ▶️ Start game
             </Button>
           </div>
         </Card>
+        </motion.div>
       </div>
     )
   }
@@ -118,18 +142,25 @@ export function Play() {
       {currentQuestion && (
         <Card className="items-center text-center">
           <p className="font-display text-base-content/60">Show the answer with your fingers</p>
-          <div className="my-2 font-display text-7xl font-extrabold text-brand-primary">
+          <div className="my-2 font-display text-7xl font-extrabold text-primary">
             {currentQuestion.text} = ?
           </div>
 
           {lastAnswer ? (
-            <div
-              className={`badge badge-lg font-display ${lastAnswer.correct ? 'badge-success' : 'badge-error'} animate-pop`}
+            <motion.div
+              className={`badge badge-lg font-display ${lastAnswer.correct ? 'badge-success' : 'badge-error'}`}
+              initial={{ scale: 0.6, opacity: 0, x: 0 }}
+              animate={
+                lastAnswer.correct
+                  ? { scale: 1, opacity: 1, x: 0 }
+                  : { scale: 1, opacity: 1, x: [0, -8, 8, -6, 6, 0] }
+              }
+              transition={{ duration: 0.4 }}
             >
               {lastAnswer.correct
                 ? `✅ Correct! It's ${lastAnswer.expected}`
                 : `❌ Oops, you showed ${lastAnswer.given}. It's ${lastAnswer.expected}`}
-            </div>
+            </motion.div>
           ) : (
             <div className="badge badge-lg badge-ghost font-display">
               {detected < 0 ? '✋ Waiting for your hand…' : `You're showing ${detected}`}
@@ -163,7 +194,12 @@ export function Play() {
               placeholder="?"
               aria-label="Type your answer"
             />
-            <Button type="submit" variant="primary" disabled={!!lastAnswer || padValue === ''}>
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={!!lastAnswer || padValue === ''}
+              onClick={() => audio.playClick()}
+            >
               Submit
             </Button>
           </form>
@@ -177,11 +213,19 @@ export function Play() {
       <Modal open={gameOver} onClose={reset} dismissable={false} title={status === 'won' ? '🎉 You won!' : '💀 Game over'}>
         <div className="text-center">
           <p className="font-display text-2xl">
-            You scored <span className="font-bold text-brand-primary">{score}</span>
+            You scored <span className="font-bold text-primary">{score}</span>
           </p>
           <p className="text-base-content/60">Best: {best}</p>
           <div className="mt-5 flex justify-center gap-3">
-            <Button variant="primary" onClick={start}>🔁 Play again</Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                audio.playClick()
+                start()
+              }}
+            >
+              🔁 Play again
+            </Button>
             <Link to="/">
               <Button variant="ghost">🏠 Home</Button>
             </Link>

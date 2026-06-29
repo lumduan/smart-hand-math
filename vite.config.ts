@@ -19,7 +19,7 @@ export default defineConfig({
     // guard). Allow the Cloudflare-proxied domain used to reach this dev
     // server over HTTPS. (localhost/127.0.0.1 always allowed, so the SSH-tunnel
     // path still works.)
-    allowedHosts: ['hand.candythink.com'],
+    allowedHosts: ['hand.candythink.com', 'handmath.org'],
     watch: {
       // polling is more reliable across the Docker bind-mount boundary
       usePolling: true,

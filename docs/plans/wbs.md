@@ -45,22 +45,22 @@
 > ROADMAP: [§Phase 3](./ROADMAP.md#phase-3--ux-polish--design-system)
 
 ### 3.1 React upgrade
-- [ ] Upgrade **React 18 → 19** (+ `@types/react`, `@types/react-dom`); update [`CLAUDE.md` §15](../../CLAUDE.md)
+- [x] Upgrade **React 18 → 19** (+ `@types/react`, `@types/react-dom`); update [`CLAUDE.md` §15](../../CLAUDE.md)
 
 ### 3.2 Theme
-- [ ] RFC → ADR: adopt a pastel DaisyUI theme (`cupcake` / `pastel`) in place of custom `smartmath`
-- [ ] Apply the chosen theme + refine color/contrast palette
+- [x] RFC → ADR: adopt a pastel DaisyUI theme (`cupcake`) in place of custom `smartmath` (RFC-0001 / ADR-0006)
+- [x] Apply the chosen theme + refine color/contrast palette
 
 ### 3.3 Animation
-- [ ] Add **`framer-motion`**
-- [ ] `docs/plans/animations/PoC/` — prototype page transitions, correct/wrong feedback, confetti micro-rewards
-- [ ] Roll the winning motion set into components
+- [x] Add **`framer-motion`** (+ `canvas-confetti`)
+- [x] `docs/plans/animations/` — page transitions, correct/wrong feedback, confetti micro-rewards
+- [x] Roll the winning motion set into components
 
 ### 3.4 Audio
-- [ ] Source/license + ship **`public/audio/*.mp3`** (`correct`, `wrong`, `click`, `win`, `lose`, `tick`) with attribution
+- [x] Synthesized **Web Audio** sound effects (ADR-0007; Howler + `public/audio/` removed)
 
 ### 3.5 Onboarding
-- [ ] Camera-permission flow polish, empty states, kid-friendly copy & microcopy
+- [x] Camera-permission flow polish, empty states, dismissible privacy banner, kid-friendly copy & microcopy
 
 ---
 

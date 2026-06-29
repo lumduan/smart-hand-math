@@ -5,7 +5,7 @@ import type { Landmark, RawHandedness, TrackedHand } from '@/utils/fingerMathLog
 export type TrackerStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 interface UseHandTrackerOptions {
-  videoRef: RefObject<HTMLVideoElement>
+  videoRef: RefObject<HTMLVideoElement | null>
   /** Called with the detected hands (landmarks + handedness) every fresh frame. */
   onLandmarks?: (hands: TrackedHand[]) => void
   /** Maximum hands to track (1 or 2). */

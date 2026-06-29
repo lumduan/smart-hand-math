@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { motion } from 'framer-motion'
 import { CameraView } from '@/components/camera/CameraView'
 import { Card } from '@/components/common/Card'
 
@@ -9,7 +10,7 @@ export function Learn() {
   return (
     <div className="space-y-6">
       <header className="text-center">
-        <h1 className="font-display text-3xl font-extrabold text-brand-primary">Learn the gestures</h1>
+        <h1 className="font-display text-3xl font-extrabold text-primary">Learn the gestures</h1>
         <p className="mt-2 text-base-content/70">
           Turn on the camera and hold up your fingers. Try to make each number from 0 to 10!
         </p>
@@ -22,14 +23,17 @@ export function Learn() {
 
         <Card className="items-center justify-center text-center">
           <p className="font-display text-lg text-base-content/60">You're showing</p>
-          <div
+          <motion.div
             key={detected}
             className={`my-2 font-display font-extrabold leading-none ${
-              detected < 0 ? 'text-7xl text-base-content/40' : 'text-9xl text-brand-primary animate-pop'
+              detected < 0 ? 'text-7xl text-base-content/40' : 'text-9xl text-primary'
             }`}
+            initial={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.25 }}
           >
             {detected < 0 ? '✋' : detected}
-          </div>
+          </motion.div>
           <p className="text-base-content/60">
             {detected < 0
               ? 'Point your hand at the camera…'

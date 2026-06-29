@@ -116,26 +116,26 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 3.1 React Upgrade
 
-- [ ] Upgrade React 18 → 19 (+ `@types/react`, `@types/react-dom`)
+- [x] Upgrade React 18 → 19 (+ `@types/react`, `@types/react-dom`)
 
 ### 3.2 Theme
 
-- [ ] RFC → ADR: adopt a pastel DaisyUI theme (`cupcake` / `pastel`) in place of custom `smartmath`
-- [ ] Apply theme + refine color/contrast palette
+- [x] RFC → ADR: adopt a pastel DaisyUI theme (`cupcake` / `pastel`) in place of custom `smartmath`
+- [x] Apply theme + refine color/contrast palette
 
 ### 3.3 Animation
 
-- [ ] Add `framer-motion`
-- [ ] `docs/plans/animations/PoC/` — prototype page transitions + correct/wrong feedback + confetti micro-rewards
-- [ ] Roll winning motion set into components
+- [x] Add `framer-motion`
+- [x] `docs/plans/animations/` — page transitions + correct/wrong feedback + confetti micro-rewards (RFC-0001 / ADR-0006 + `animations/README.md`)
+- [x] Roll winning motion set into components
 
 ### 3.4 Audio
 
-- [ ] Source/license + ship `public/audio/*.mp3` (`correct`, `wrong`, `click`, `win`, `lose`, `tick`) with attribution
+- [x] Synthesized Web Audio sound effects (`correct`, `wrong`, `click`, `win`, `lose`, `tick`) — no files/licensing (ADR-0007)
 
 ### 3.5 Onboarding
 
-- [ ] Camera-permission flow, empty states, kid-friendly copy and microcopy
+- [x] Camera-permission flow, empty states, dismissible privacy banner, kid-friendly copy
 
 **Exit criteria:** visually polished, animated, audible; theme locked by ADR.
 
@@ -258,12 +258,13 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 3 — UX Polish & Design System
+- **Active phase:** Phase 4 — Internationalization (i18n)
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
   - Phase 2 (Core Engine Verification & Quality) — vitest + jsdom + RTL (114 tests); finger-logic / math-generator / component / context tests; `src/utils` coverage gate met; `test` wired into CI; hardware-verified handedness default (`INVERT_HANDEDNESS = false`, ADR-0005)
+  - Phase 3 (UX Polish & Design System) — React 19; DaisyUI `cupcake` theme (ADR-0006); `framer-motion` + `canvas-confetti` animations; synthesized Web Audio SFX (ADR-0007, Howler removed); onboarding/privacy banner. 118 tests green.
 - **In progress:**
   - nothing
-- **Known follow-ups (from `CLAUDE.md` §15):** add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19
+- **Known follow-ups (from `CLAUDE.md` §15):** extract i18n strings
 - **Blocked by:** nothing

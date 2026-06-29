@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { useHandTracker } from '@/hooks/useHandTracker'
+import { useAudio } from '@/hooks/useAudio'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { handsToNumber, type TrackedHand } from '@/utils/fingerMathLogic'
 
@@ -36,6 +37,7 @@ interface CameraViewProps {
  */
 export function CameraView({ onNumberChange, numHands = 2, className = '' }: CameraViewProps) {
   const { mirrored, setCameraPermission } = useAppSettings()
+  const audio = useAudio()
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const recentValues = useRef<number[]>([])
@@ -54,8 +56,8 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
     if (!hands.length) return
 
     ctx.lineWidth = Math.max(2, canvas.width * 0.008)
-    ctx.strokeStyle = '#6d28d9'
-    ctx.fillStyle = '#f59e0b'
+    ctx.strokeStyle = '#65c3c8'
+    ctx.fillStyle = '#eeaf3a'
 
     for (const hand of hands) {
       const lm = hand.landmarks
@@ -139,7 +141,10 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
           {!isLive ? (
             <button
               className="btn btn-primary btn-circle shadow-lg"
-              onClick={() => void start()}
+              onClick={() => {
+                audio.playClick()
+                void start()
+              }}
               aria-label="Start camera"
             >
               ▶️
@@ -147,7 +152,10 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
           ) : (
             <button
               className="btn btn-ghost btn-circle bg-black/40 text-white shadow-lg"
-              onClick={stop}
+              onClick={() => {
+                audio.playClick()
+                stop()
+              }}
               aria-label="Stop camera"
             >
               ⏹️
@@ -157,8 +165,12 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
       </div>
 
       {error && (
-        <div className="absolute bottom-2 left-2 right-2 rounded-xl bg-error/90 p-2 text-center text-sm text-white">
-          {error}. Please allow camera access and use HTTPS (localhost is okay).
+        <div className="absolute bottom-2 left-2 right-2 rounded-xl bg-error/90 p-3 text-center text-sm text-white">
+          <p className="font-display font-bold">⛔ Camera blocked</p>
+          <p className="mt-1">
+            {error}. Allow camera access in your browser, then tap ▶️ to try again. (Camera needs
+            HTTPS or localhost.)
+          </p>
         </div>
       )}
     </div>

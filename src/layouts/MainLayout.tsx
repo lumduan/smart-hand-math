@@ -1,5 +1,7 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAppSettings } from '@/context/AppSettingsContext'
+import { useAudio } from '@/hooks/useAudio'
+import { AnimatePresence, motion } from 'framer-motion'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Home', icon: '🏠', end: true },
@@ -10,12 +12,14 @@ const NAV_ITEMS = [
 /** App shell: top navigation, routed content, footer. */
 export function MainLayout() {
   const { muted, toggleMuted, mirrored, toggleMirrored } = useAppSettings()
+  const audio = useAudio()
+  const location = useLocation()
 
   return (
     <div className="flex min-h-screen flex-col bg-base-200">
       <header className="navbar sticky top-0 z-20 border-b border-base-300 bg-base-100/90 px-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2">
-          <NavLink to="/" className="flex items-center gap-2 font-display text-xl font-extrabold text-brand-primary">
+          <NavLink to="/" className="flex items-center gap-2 font-display text-xl font-extrabold text-primary">
             <span className="text-2xl">✋</span>
             <span>SmartHand Math</span>
           </NavLink>
@@ -26,6 +30,7 @@ export function MainLayout() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={() => audio.playClick()}
                 className={({ isActive }) =>
                   `btn btn-sm rounded-full font-display ${isActive ? 'btn-primary' : 'btn-ghost'}`
                 }
@@ -39,7 +44,10 @@ export function MainLayout() {
           <div className="flex items-center gap-1">
             <button
               className="btn btn-ghost btn-sm btn-circle"
-              onClick={toggleMirrored}
+              onClick={() => {
+                audio.playClick()
+                toggleMirrored()
+              }}
               title={mirrored ? 'Mirror on' : 'Mirror off'}
               aria-label="Toggle mirror"
             >
@@ -47,7 +55,10 @@ export function MainLayout() {
             </button>
             <button
               className="btn btn-ghost btn-sm btn-circle"
-              onClick={toggleMuted}
+              onClick={() => {
+                audio.playClick()
+                toggleMuted()
+              }}
               title={muted ? 'Muted' : 'Sound on'}
               aria-label="Toggle sound"
             >
@@ -58,7 +69,17 @@ export function MainLayout() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
-        <Outlet />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Outlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       <footer className="border-t border-base-300 bg-base-100 px-4 py-4 text-center text-sm text-base-content/60">

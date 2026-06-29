@@ -83,7 +83,7 @@ These three constraints shape every decision in the project.
 | **Styling** | **Tailwind CSS** + **`daisyui`** plugin | Use a kid-friendly DaisyUI theme such as **`cupcake`** or **`pastel`` (built-in) or a custom pastel theme. |
 | **State management** | **Native React Context**, modularized into `GameContext` and `AppSettingsContext` | No Redux/Zustand in Phase 1. |
 | **Animation** | **`framer-motion`** | Fluid page/element transitions and visual micro-rewards (confetti, badge pop, shake-on-wrong). |
-| **Audio engine** | **`howler.js`** | Lightweight, non-blocking game sound effects. |
+| **Audio engine** | **Web Audio API** (synthesized tones) | Lightweight, in-browser sound effects — no files (ADR-0007). |
 | **Routing** | `react-router-dom` | `/`, `/learn`, `/play`. |
 | **Path alias** | `@/*` → `src/*` | Configured in both `tsconfig.app.json` and `vite.config.ts`. |
 | **Quality** | ESLint + `tsc` | Enforced in CI (`.github/workflows/ci.yml`). |
@@ -353,8 +353,8 @@ Phase 1 is English-only, **but strings must never be inlined in components.**
   rounded corners (`rounded-3xl`), generous whitespace, large tap targets.
 - **Motion:** `framer-motion` for page transitions, button presses, correct/wrong
   feedback (bounce on correct, gentle shake on wrong, confetti on milestones).
-- **Audio:** `howler.js` effects — `correct`, `wrong`, `click`, `win`, `lose`,
-  `tick`. Files in `public/audio/`. Respect `muted` / `volume`.
+- **Audio:** synthesized Web Audio tones — `correct`, `wrong`, `click`, `win`,
+  `lose`, `tick` (no files; see ADR-0007). Respect `muted` / `volume`.
 - **Tone:** encouraging, never punitive. Show the expected answer after a miss.
 - **Accessibility:** the game is fully playable **without a camera** via an
   on-screen number pad fallback (see `pages/Play.tsx`).
@@ -382,7 +382,7 @@ smart-hand-math/
 │   │   ├── GameContext.tsx
 │   │   └── AppSettingsContext.tsx
 │   ├── hooks/
-│   │   ├── useAudio.ts        # howler.js sound controller
+│   │   ├── useAudio.ts        # Web Audio sound controller
 │   │   └── useHandTracker.ts  # MediaPipe Hands init + tracking state
 │   ├── layouts/
 │   │   └── MainLayout.tsx     # nav header + content + footer
@@ -495,14 +495,14 @@ these migrations:
 
 | Area | Blueprint target | Current state | Action |
 | --- | --- | --- | --- |
-| React version | **React 19** | React 18.3 | Upgrade `react`/`react-dom` + types. |
+| React version | **React 19** | ✅ React 19.2 | — |
 | Finger-counting logic | **Soroban** (thumb=5, fingers=1, L=tens/R=ones, 0–99) | ✅ Implemented (distance-based, handedness-independent digit) | — |
 | Question range | 0–99 across difficulties (§4.7) | ✅ easy 0–9 / medium 0–50 / hard 0–99 | — |
 | Debounce | ~**500 ms** commit hold (§4.6) | ✅ Two-layer: denoise in `CameraView` + `ANSWER_HOLD_MS=500` in `Play` | — |
 | Handedness/mirror | Single-toggle correction (§4.5) | ✅ `INVERT_HANDEDNESS` + `anatomicalHand` | ✅ Verified on real hardware — `false` ([ADR-0005](docs/plans/adr/ADR-0005-handedness-default.md)); flip if a new device shows wrong hand = tens. |
-| Animation | **`framer-motion`** | Tailwind keyframes only | Add dependency + motion primitives. |
-| DaisyUI theme | `cupcake` / `pastel` | Custom `smartmath` (purple) | Adopt a pastel theme. |
+| Animation | **`framer-motion`** | ✅ `framer-motion` + `canvas-confetti` ([animations/README](docs/plans/animations/README.md)) | — |
+| DaisyUI theme | `cupcake` / `pastel` | ✅ `cupcake` ([ADR-0006](docs/plans/adr/ADR-0006-daisyui-cupcake-theme.md)) | — |
 | i18n | Centralized string dictionary (§7) | Strings inlined in JSX | Extract to `src/i18n/`. |
-| Audio | `howler.js` (done) | ✅ Present | Add `public/audio/*.mp3`. |
+| Audio | `howler.js` | ✅ Synthesized Web Audio ([ADR-0007](docs/plans/adr/ADR-0007-web-audio-synthesis.md); Howler + mp3 removed) | — |
 
 > When you complete any row above, flip its state to ✅ in this table.

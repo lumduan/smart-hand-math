@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAudio } from '@/hooks/useAudio'
 
 interface TimerProps {
   /** Countdown duration in seconds. Restart by changing the `key` of the component. */
@@ -14,6 +15,12 @@ export function Timer({ seconds, running = true, onExpire }: TimerProps) {
   useEffect(() => {
     onExpireRef.current = onExpire
   }, [onExpire])
+
+  const audio = useAudio()
+  // Tick during the final, urgent seconds.
+  useEffect(() => {
+    if (running && remaining > 0 && remaining <= 5) audio.playTick()
+  }, [remaining, running, audio])
 
   useEffect(() => {
     setRemaining(seconds)

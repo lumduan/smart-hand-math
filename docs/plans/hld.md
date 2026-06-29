@@ -222,15 +222,12 @@ These are **not** Phase 1 work — they are recorded here so architecture
 discussion has an accurate picture, and are scheduled in
 [`wbs.md`](./wbs.md) / [`ROADMAP.md`](./ROADMAP.md):
 
-- **React 18.3, not 19** (CLAUDE.md target) → Phase 3.
-- **No `framer-motion`** — animation is bespoke Tailwind keyframes (`pop`,
-  `wiggle`) → Phase 3.
-- **Theme is custom `smartmath`, not the intended pastel** (`cupcake`/`pastel`)
-  → Phase 3 RFC/ADR (see [ADR-0004](./adr/ADR-0004-tailwind-daisyui.md)).
-- **User-facing strings are inlined in JSX**, not yet centralized in
+- **Phase 0–3 migrations complete** — React 19, `framer-motion` + `canvas-confetti`,
+  DaisyUI `cupcake` theme ([ADR-0006](./adr/ADR-0006-daisyui-cupcake-theme.md)),
+  synthesized Web Audio ([ADR-0007](./adr/ADR-0007-web-audio-synthesis.md)), and the
+  vitest suite are all in (see [`CLAUDE.md` §15](../../CLAUDE.md)).
+- **User-facing strings are still inlined in JSX**, not yet centralized in
   `src/i18n/strings.ts` → Phase 4.
-- **No audio assets** in `public/audio/` (Howler no-ops safely) → Phase 3.
-- **No test runner** (vitest) → Phase 2.
 - **`GameStatus 'won'` is unreachable** — no reducer transition sets it (the game
   is endless until you lose); `Play.tsx` already has the win UI → resolve in
   Phase 5 (add a win condition or drop the branch).
