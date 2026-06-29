@@ -49,27 +49,27 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 1.2 High-Level Design (HLD)
 
-- [ ] `docs/plans/hld.md` — system architecture + data flow (camera → `useHandTracker` → `CameraView` → `fingerMathLogic` → `GameContext`)
-- [ ] Component map + the three architectural constraints (client-side-only, Dockerized, English-first/i18n-ready)
-- [ ] Threat/privacy model: confirm zero network egress of video/landmarks
+- [x] `docs/plans/hld.md` — system architecture + data flow (camera → `useHandTracker` → `CameraView` → `fingerMathLogic` → `GameContext`)
+- [x] Component map + the three architectural constraints (client-side-only, Dockerized, English-first/i18n-ready)
+- [x] Threat/privacy model: confirm zero network egress of video/landmarks
 
 ### 1.3 Functional Requirements (FRD)
 
-- [ ] `docs/plans/frd.md` — personas (kid / parent / teacher), user stories
-- [ ] Functional + non-functional requirements (FR / NFR)
-- [ ] Accessibility + privacy requirements
+- [x] `docs/plans/frd.md` — personas (kid / parent / teacher), user stories
+- [x] Functional + non-functional requirements (FR / NFR)
+- [x] Accessibility + privacy requirements
 
 ### 1.4 Architecture Decision Records (ADR)
 
-- [ ] `docs/plans/adr/ADR-0000-template.md`
-- [ ] `ADR-0001` — 100% client-side, no backend (privacy + zero inference cost)
-- [ ] `ADR-0002` — Soroban finger-counting system (vs Western 1-finger=1)
-- [ ] `ADR-0003` — MediaPipe `tasks-vision` HandLandmarker (vs TensorFlow.js, legacy `@mediapipe/hands`)
-- [ ] `ADR-0004` — Tailwind CSS + DaisyUI for theming
+- [x] `docs/plans/adr/ADR-0000-template.md`
+- [x] `ADR-0001` — 100% client-side, no backend (privacy + zero inference cost)
+- [x] `ADR-0002` — Soroban finger-counting system (vs Western 1-finger=1)
+- [x] `ADR-0003` — MediaPipe `tasks-vision` HandLandmarker (vs TensorFlow.js, legacy `@mediapipe/hands`)
+- [x] `ADR-0004` — Tailwind CSS + DaisyUI for theming
 
 ### 1.5 Work Breakdown Structure (WBS)
 
-- [ ] `docs/plans/wbs.md` — decompose Phases 2–7 into trackable tasks (derivable from this roadmap)
+- [x] `docs/plans/wbs.md` — decompose Phases 2–7 into trackable tasks (derivable from this roadmap)
 
 **Exit criteria:** `docs/plans/` is populated; HLD / FRD / ADRs are referenceable in any future discussion.
 
@@ -258,10 +258,11 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 1 — Engineering Docs & Conventions
+- **Active phase:** Phase 2 — Core Engine Verification & Quality
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
+  - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
 - **In progress:**
-  - Phase 1.1 — conventions README + this ROADMAP (done); HLD / FRD / ADRs / WBS still open
+  - nothing
 - **Known follow-ups (from `CLAUDE.md` §15):** verify `INVERT_HANDEDNESS` on real hardware; add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19; add a test runner
 - **Blocked by:** nothing
