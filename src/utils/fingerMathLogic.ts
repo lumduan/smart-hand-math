@@ -117,15 +117,20 @@ export function handValue(landmarks: Landmark[]): number {
 }
 
 /**
- * Webcams feed a NON-mirrored frame to a model trained assuming a MIRRORED
- * (selfie) frame, so the raw MediaPipe "Left"/"Right" labels are systematically
- * swapped relative to the player's anatomical hand. The cosmetic display-mirror
- * flag does NOT change this (landmark coords are always in raw-frame space).
+ * Whether to SWAP MediaPipe's raw "Left"/"Right" handedness labels before
+ * assigning the TENS (anatomical left) vs UNITS (anatomical right) slot.
  *
- * Flip this single constant if real-hardware testing shows the wrong hand being
- * treated as tens.
+ * Some webcam/browser combos feed the model a frame whose mirroring disagrees
+ * with the selfie-trained model's assumption, so the raw labels come out
+ * swapped relative to the player's anatomical hand. On our VERIFIED hardware
+ * (see ADR-0005) the raw labels are NOT swapped, so this is `false` and the
+ * left hand → tens / right hand → units directly.
+ *
+ * The cosmetic display-`mirrored` flag does NOT affect this — landmark coords
+ * are always in raw-frame space. Flip this single constant if a new device shows
+ * the wrong hand being treated as tens.
  */
-export const INVERT_HANDEDNESS = true
+export const INVERT_HANDEDNESS = false
 
 /** Convert a raw MediaPipe label into the player's anatomical hand. */
 export function anatomicalHand(raw: RawHandedness): RawHandedness {

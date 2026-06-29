@@ -1,69 +1,73 @@
 # PoC — Hand-tracking gesture→number mapping on real hardware
 
-> Part of [Phase 2.5 — Hardware Verification](../../../ROADMAP.md#phase-2--core-engine-verification--quality).
-> Status: **awaiting first capture**.
+> Part of [Phase 2.5 — Hardware Verification](../../ROADMAP.md#phase-2--core-engine-verification--quality).
+> Status: **verified** — handedness default confirmed live on real hardware
+> (`INVERT_HANDEDNESS = false`, [ADR-0005](../../adr/ADR-0005-handedness-default.md)).
+> The capture tool below remains available to bank automated regression samples.
 
 ## Hypothesis
 
 The Soroban decoder in `src/utils/fingerMathLogic.ts` (`handValue`,
-`handsToNumber`, `anatomicalHand`) and the current `INVERT_HANDEDNESS = true`
-default correctly map a *real* webcam hand to the intended 0–99 number, across
-hand orientations and lighting — i.e. the gesture a child actually makes decodes
-to the number they mean, with the **left hand = tens / right hand = units**
-routing the right way around.
+`handsToNumber`, `anatomicalHand`) maps a *real* webcam hand to the intended
+0–99 number, with the **left hand = tens / right hand = units** routing the right
+way around on the target hardware — given the correct `INVERT_HANDEDNESS` value.
 
-We will know it works when captured landmark samples decode (via the exact
-production code path) to the number the operator intended, for every digit and
-for two-handed tens/units combos.
+We know it works when a real hand decodes (via the exact production code path) to
+the number the player intends, for every digit and for two-handed tens/units
+combos.
 
 ## What was tried
 
-- **Capture tool:** [`capture.html`](./capture.html) — a standalone page that
-  loads `@mediapipe/tasks-vision` from a CDN, runs `HandLandmarker` in VIDEO
-  mode (`numHands: 2`, GPU → CPU fallback, mirroring the app), draws the
-  skeleton, and on demand serializes the current frame's
-  `TrackedHand[]` (21 landmarks + the **raw** `Left`/`Right` label + score per
-  hand) plus the operator-entered intended number into a `.json` file.
-- **Consumer test:** [`src/utils/fingerMathLogic.real.test.ts`](../../../src/utils/fingerMathLogic.real.test.ts)
-  globs `src/test/fixtures/hand-tracking/*.json` and, for each fixture, asserts
-  `handsToNumber(hands) === expectedNumber` (and that each hand decodes to a
-  digit 0–9). It `describe.skip`s until the first fixture is dropped in, so CI
-  stays green now and auto-activates once captures exist.
+- **Live verification (done):** the app was run on a real webcam + MediaPipe
+  `HandLandmarker` and the one-hand / two-handed tests below were performed
+  directly. With the Phase-0 default `INVERT_HANDEDNESS = true` the left hand
+  routed to **units** (swapped); flipping to `false` restored **left = tens /
+  right = units**. See [ADR-0005](../../adr/ADR-0005-handedness-default.md).
+- **Capture tool (available, optional):** [`capture.html`](./capture.html) loads
+  `@mediapipe/tasks-vision` from a CDN, runs `HandLandmarker` in VIDEO mode
+  (`numHands: 2`, GPU → CPU fallback), and serializes a frame's `TrackedHand[]`
+  (21 landmarks + the **raw** `Left`/`Right` label + score) plus the intended
+  number to a `.json` file. The consumer test
+  [`fingerMathLogic.real.test.ts`](../../../../src/utils/fingerMathLogic.real.test.ts)
+  asserts `handsToNumber(hands) === expectedNumber` for each fixture; it
+  `describe.skip`s until a fixture exists, so CI stays green and it auto-activates
+  once captures are dropped into `src/test/fixtures/hand-tracking/`.
 
-### Run the capture
+### Reproduce the live check
 
-From the repo root (camera needs a secure context — `localhost` qualifies):
+Run the dev server (camera needs a secure context — `localhost` or HTTPS), then:
+
+1. **One-hand test:** right hand out of frame, left hand showing 3 → Learn must
+   read **30** (left = tens). Symmetrically, right hand showing 7 alone → **7**.
+2. **Two-handed test:** left hand 3 + right hand 7 → **37**.
+
+If a hand routes to the wrong slot, flip `INVERT_HANDEDNESS` in
+`src/utils/fingerMathLogic.ts` and re-check.
+
+### (Optional) Bank automated regression captures
 
 ```bash
-python3 -m http.server 8080
+python3 -m http.server 8080   # from repo root
 # open http://localhost:8080/docs/plans/hand-tracking/PoC/capture.html
 ```
 
-1. Click **Start camera**, allow webcam access.
-2. Set the **Intended number** to the value you are physically showing.
-3. Show the gesture; when a hand is tracked, click **Capture sample** → a
-   `<label>.json` downloads.
-4. Move the file into `src/test/fixtures/hand-tracking/`.
-
-### Capture plan (minimum to satisfy Phase 2.5)
-
-- **Left + right hand** for each digit **0–9** (one hand at a time, intended
-  number = the digit).
-- **Two-handed tens/units combos:** e.g. intended 37, 50, 99, 10, 25 — covering
-  non-zero tens & units.
-- Repeat across **≥ 2 orientations / lighting conditions** to confirm the
-  distance-based detection is orientation-tolerant.
+Set the **Intended number**, show the gesture, click **Capture sample**, and move
+the downloaded `<label>.json` into `src/test/fixtures/hand-tracking/`. Cover
+left + right hand for each digit 0–9 and a few two-handed combos, ideally across
+≥2 orientations/lighting. `npm run test:run` then runs them as regression tests.
 
 ## Result
 
-(filled in after capture — record how many fixtures passed/failed and any
-systematic mismatches.)
+Live testing on the target hardware: with `INVERT_HANDEDNESS = true` the
+handedness came out swapped (left hand → units); after flipping to `false`, the
+one-hand test (lone left hand = 3 reads **30**) and the two-handed test
+(left 3 + right 7 reads **37**) both pass. The distance-based per-finger decoding
+was correct throughout — only the tens/units routing was affected by the toggle.
 
 ## Verdict
 
-Proceed / iterate / abandon — to be set once captures exist. If two-handed
-numbers come out with tens and units **swapped** (e.g. 37 reads as 73, or a
-single hand routes to the wrong slot), that is the `INVERT_HANDEDNESS` default
-being wrong for this hardware: flip the constant in
-`src/utils/fingerMathLogic.ts` and re-run. Record the final default **and** any
-tuned detection thresholds in **ADR-0005**, then flip ROADMAP §2.5 to `[x]`.
+**Proceed.** `INVERT_HANDEDNESS = false` is the verified default for this
+hardware, recorded in [ADR-0005](../../adr/ADR-0005-handedness-default.md).
+Phase 2.5 is closed (ROADMAP §2.5 → `[x]`). The capture tool + real-fixture test
+remain as an opt-in way to lock the mapping into the automated suite; they are
+not required for the Phase-2 exit criteria.

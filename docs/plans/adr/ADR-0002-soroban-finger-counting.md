@@ -61,17 +61,18 @@ Adopt the **Soroban / Asian positional finger-counting system**, implemented in
 
 **The handedness-swap bug class has a single toggle.** Webcams feed a
 non-mirrored frame to a model trained on mirrored (selfie) frames, so the raw
-MediaPipe `"Left"`/`"Right"` labels are systematically swapped relative to the
-player's anatomical hand. This is corrected by one easily-flipped, documented
-constant:
+MediaPipe `"Left"`/`"Right"` labels *may* come out swapped relative to the
+player's anatomical hand (this is device-dependent). It is corrected by one
+easily-flipped, documented constant:
 
 ```ts
-export const INVERT_HANDEDNESS = true // raw label → anatomical hand
+export const INVERT_HANDEDNESS = false // verified on real hardware (ADR-0005)
 ```
 
 `anatomicalHand(raw)` applies the flip; `handsToNumber()` routes each hand to
-tens/units through it. **If real-hardware testing shows the wrong hand counting
-as tens, flip that one constant.**
+tens/units through it. **Verified on real hardware (Phase 2.5): the default is
+`false`** — see [ADR-0005](./ADR-0005-handedness-default.md). If a new device
+shows the wrong hand counting as tens, flip that one constant.
 
 ## Consequences
 
@@ -92,9 +93,10 @@ as tens, flip that one constant.**
 - **Steeper than Western counting** for users who don't know Soroban — but that
   is the point of the product, and the Learn page coaches it.
 - **Handedness-swap is a real, if contained, bug class.** It is mitigated by the
-  toggle, but the *default* value (`true`) must be confirmed on real hardware —
-  that confirmation is [Phase 2.5](../ROADMAP.md) (hardware PoC) and the final
-  threshold/flip will be recorded in a follow-up ADR-0005.
+  toggle; the default has now been **verified on real hardware as `false`**
+  ([ADR-0005](./ADR-0005-handedness-default.md)). The "correct" value is
+  device-dependent, so a new camera showing the wrong hand as tens still means
+  flipping the constant (and ideally banking a landmark capture as a regression).
 
 ## Alternatives Considered
 

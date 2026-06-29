@@ -34,9 +34,9 @@
 - [x] `AppSettingsContext`: persistence via a `localStorage` mock
 
 ### 2.5 Hardware verification (PoC) → ADR-0005
-- [~] `docs/plans/hand-tracking/PoC/` — capture tool + consumer tests scaffolded; **real capture pending** (webcam + hands), then verify the `INVERT_HANDEDNESS` default
-- [ ] Confirm tens/ones mapping (left=tens, right=ones) across ≥2 orientations/lighting; tune distance thresholds
-- [ ] Record final threshold values + handedness default in **ADR-0005**
+- [x] `docs/plans/hand-tracking/PoC/` — capture tool + consumer tests scaffolded; `INVERT_HANDEDNESS` default verified live on real hardware
+- [x] Confirm tens/ones mapping (left=tens, right=ones) on real hardware (one-hand + two-handed live test)
+- [x] Record verified handedness default (`INVERT_HANDEDNESS = false`) in **ADR-0005**
 
 ---
 

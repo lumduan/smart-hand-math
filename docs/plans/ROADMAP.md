@@ -102,9 +102,9 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 2.5 Hardware Verification (PoC)
 
-- [~] `docs/plans/hand-tracking/PoC/` — capture tool + real-fixture consumer tests scaffolded; **real landmark capture pending** (needs a webcam + hands), then verify `INVERT_HANDEDNESS` default + tune thresholds
-- [ ] Confirm tens/ones mapping (left = tens, right = ones) across ≥ 2 hand orientations/lighting
-- [ ] ADR-0005 (or RFC) recording the final threshold values
+- [x] `docs/plans/hand-tracking/PoC/` — capture tool + real-fixture consumer tests scaffolded; `INVERT_HANDEDNESS` default verified live on real hardware
+- [x] Confirm tens/ones mapping (left = tens, right = ones) on real hardware (one-hand + two-handed live test)
+- [x] ADR-0005 recording the verified handedness default (`INVERT_HANDEDNESS = false`)
 
 **Exit criteria:** utils coverage gate met; gesture→number mapping verified on real hardware; CI runs the test suite.
 
@@ -258,12 +258,12 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 2 — Core Engine Verification & Quality
+- **Active phase:** Phase 3 — UX Polish & Design System
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
-  - Phase 2.1–2.4 — vitest + jsdom + RTL; finger-logic / math-generator / component / context tests (114 passing); `src/utils` coverage gate met; `test` wired into CI
+  - Phase 2 (Core Engine Verification & Quality) — vitest + jsdom + RTL (114 tests); finger-logic / math-generator / component / context tests; `src/utils` coverage gate met; `test` wired into CI; hardware-verified handedness default (`INVERT_HANDEDNESS = false`, ADR-0005)
 - **In progress:**
-  - Phase 2.5 — hardware PoC: capture tool + real-fixture consumer tests scaffolded; awaiting real landmark capture (webcam + hands) + ADR-0005
-- **Known follow-ups (from `CLAUDE.md` §15):** verify `INVERT_HANDEDNESS` on real hardware; add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19
+  - nothing
+- **Known follow-ups (from `CLAUDE.md` §15):** add `framer-motion`; adopt pastel theme; extract i18n strings; ship `public/audio/*.mp3`; upgrade React 18→19
 - **Blocked by:** nothing

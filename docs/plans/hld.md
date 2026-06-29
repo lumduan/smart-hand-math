@@ -125,7 +125,7 @@ Implemented in [`src/utils/fingerMathLogic.ts`](../../src/utils/fingerMathLogic.
 | `handValue(landmarks)` | `0..9` | thumb open = +5; each open index/middle/ring/pinky = +1 |
 | `handsToNumber(TrackedHand[])` | `0..99` | anatomical left = tens, right = units; missing hand = 0; same-side tie → higher `score` wins |
 | `anatomicalHand(raw)` | `'Left'\|'Right'` | applies `INVERT_HANDEDNESS` |
-| `INVERT_HANDEDNESS` | `true` | single toggle for the webcam handedness-label swap |
+| `INVERT_HANDEDNESS` | `false` | single toggle for the webcam handedness-label swap (verified — [ADR-0005](./adr/ADR-0005-handedness-default.md)) |
 | `getFingerStates(landmarks)` | per-finger booleans | for debugging / overlays |
 
 Detection is **distance-based** (tip farther from a reference joint than the PIP

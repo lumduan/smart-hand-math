@@ -188,16 +188,19 @@ The digit never needs handedness; handedness is **only** consulted in
 ### 4.5 ⚠️ Handedness Correction (single toggle)
 
 Webcams feed a **non-mirrored** frame to a model trained assuming a **mirrored
-(selfie)** frame, so the raw MediaPipe `"Left"`/`"Right"` labels are
-**systematically swapped** relative to the player's anatomical hand. The
-cosmetic display-`mirrored` flag does **not** affect this — landmark coordinates
-are always in raw-frame space.
+(selfie)** frame, so the raw MediaPipe `"Left"`/`"Right"` labels **may come out
+swapped** relative to the player's anatomical hand — but this is
+**device/browser-dependent**, not guaranteed. The cosmetic display-`mirrored`
+flag does **not** affect this — landmark coordinates are always in raw-frame
+space.
 
-This is handled by a single, documented, easily-flipped constant:
+This is handled by a single, documented, easily-flipped constant (verified on
+real hardware — see
+[ADR-0005](docs/plans/adr/ADR-0005-handedness-default.md)):
 
 ```ts
 // src/utils/fingerMathLogic.ts
-export const INVERT_HANDEDNESS = true // swap raw label → anatomical hand
+export const INVERT_HANDEDNESS = false // verified on real hardware (ADR-0005)
 
 export function anatomicalHand(raw: RawHandedness): RawHandedness {
   return INVERT_HANDEDNESS ? (raw === 'Left' ? 'Right' : 'Left') : raw
@@ -206,9 +209,10 @@ export function anatomicalHand(raw: RawHandedness): RawHandedness {
 
 `useHandTracker` pairs each hand's landmarks with its raw label + score;
 `handsToNumber` runs them through `anatomicalHand` before assigning place value.
-**If real-hardware testing shows the wrong hand counting as tens, flip
-`INVERT_HANDEDNESS`.** That one constant is the single source of the
-"wrong hand = tens" class of bugs.
+On the verified hardware the labels are **not** swapped, so the default is
+`false` (left hand = tens, right hand = units). **If a new device shows the
+wrong hand counting as tens, flip `INVERT_HANDEDNESS`.** That one constant is the
+single source of the "wrong hand = tens" class of bugs.
 
 ### 4.6 Debounce / Smoothing (anti-tremor)
 
@@ -495,7 +499,7 @@ these migrations:
 | Finger-counting logic | **Soroban** (thumb=5, fingers=1, L=tens/R=ones, 0–99) | ✅ Implemented (distance-based, handedness-independent digit) | — |
 | Question range | 0–99 across difficulties (§4.7) | ✅ easy 0–9 / medium 0–50 / hard 0–99 | — |
 | Debounce | ~**500 ms** commit hold (§4.6) | ✅ Two-layer: denoise in `CameraView` + `ANSWER_HOLD_MS=500` in `Play` | — |
-| Handedness/mirror | Single-toggle correction (§4.5) | ✅ `INVERT_HANDEDNESS` + `anatomicalHand` | Verify on real hardware; flip toggle if needed. |
+| Handedness/mirror | Single-toggle correction (§4.5) | ✅ `INVERT_HANDEDNESS` + `anatomicalHand` | ✅ Verified on real hardware — `false` ([ADR-0005](docs/plans/adr/ADR-0005-handedness-default.md)); flip if a new device shows wrong hand = tens. |
 | Animation | **`framer-motion`** | Tailwind keyframes only | Add dependency + motion primitives. |
 | DaisyUI theme | `cupcake` / `pastel` | Custom `smartmath` (purple) | Adopt a pastel theme. |
 | i18n | Centralized string dictionary (§7) | Strings inlined in JSX | Extract to `src/i18n/`. |
