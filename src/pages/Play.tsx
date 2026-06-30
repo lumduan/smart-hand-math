@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { CameraView } from '@/components/camera/CameraView'
 import { Button } from '@/components/common/Button'
@@ -15,6 +15,7 @@ import {
 } from '@/context/GameContext'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
+import { useAutoSubmit } from '@/hooks/useAutoSubmit'
 import { useStrings } from '@/i18n/useStrings'
 import { motion } from 'framer-motion'
 import { burst, celebrate } from '@/utils/confetti'
@@ -51,7 +52,7 @@ export function Play() {
   } = useGame()
   const audio = useAudio()
   const t = useStrings()
-  const { cameraScale } = useAppSettings()
+  const { cameraScale, autoSubmitEnabled, autoSubmitPromptMs, autoSubmitConfirmMs } = useAppSettings()
   const largeCamera = cameraScale === 'lg'
   const [detected, setDetected] = useState<number>(-1)
   const [padValue, setPadValue] = useState('')
@@ -78,8 +79,21 @@ export function Play() {
     submit(n)
   }, [padValue, submit])
 
-  // Gesture-driven auto-submit: hold the correct finger count to confirm.
+  // Gesture auto-submit (Phase 8.2): hold a value steady → prompt → commit.
+  const pending = useAutoSubmit({
+    enabled: autoSubmitEnabled,
+    promptMs: autoSubmitPromptMs,
+    confirmMs: autoSubmitConfirmMs,
+    detected,
+    canSubmit: status === 'playing' && !lastAnswer && !!currentQuestion,
+    questionId: currentQuestion?.id ?? null,
+    commit: submit,
+  })
+
+  // Legacy gesture auto-submit — used only when AutoSubmit is OFF. Holds the
+  // CORRECT finger value ~500ms to commit (A/B fallback, RFC-0003).
   useEffect(() => {
+    if (autoSubmitEnabled) return
     if (status !== 'playing' || !currentQuestion || lastAnswer) return
     if (detected < 0 || detected !== currentQuestion.answer) {
       confirmStartedAt.current = 0
@@ -88,7 +102,7 @@ export function Play() {
     if (confirmStartedAt.current === 0) confirmStartedAt.current = performance.now()
     const held = performance.now() - confirmStartedAt.current
     if (held >= ANSWER_HOLD_MS) submit(detected)
-  }, [detected, status, currentQuestion, lastAnswer, submit])
+  }, [autoSubmitEnabled, detected, status, currentQuestion, lastAnswer, submit])
 
   // After each answer: play a sound and advance (unless the game ended).
   useEffect(() => {
@@ -209,6 +223,30 @@ export function Play() {
               {lastAnswer.correct
                 ? t.play.correct(lastAnswer.expected)
                 : t.play.wrong(lastAnswer.given, lastAnswer.expected)}
+            </motion.div>
+          ) : pending ? (
+            <motion.div
+              className="flex flex-col items-center gap-1"
+              role="status"
+              aria-live="polite"
+              aria-label={t.play.autoPromptAria(pending.value)}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <div
+                className="radial-progress text-primary font-display"
+                style={
+                  {
+                    '--value': pending.progress * 100,
+                    '--size': '3rem',
+                    '--thickness': '5px',
+                  } as CSSProperties
+                }
+              >
+                {pending.value}
+              </div>
+              <span className="text-sm text-base-content/70">{t.play.autoPromptCancel}</span>
             </motion.div>
           ) : (
             <div className="badge badge-lg badge-ghost font-display">

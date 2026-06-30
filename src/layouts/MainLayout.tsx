@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useSearchParams } from 'react-router-dom'
 import { CAMERA_SIZES, useAppSettings, type CameraScale } from '@/context/AppSettingsContext'
+import { TunePanel } from '@/components/dev/TunePanel'
 import { useAudio } from '@/hooks/useAudio'
 import { useStrings } from '@/i18n/useStrings'
 import { LOCALES } from '@/i18n/strings'
@@ -27,6 +28,8 @@ export function MainLayout() {
   const audio = useAudio()
   const t = useStrings()
   const location = useLocation()
+  const [params] = useSearchParams()
+  const tune = params.has('tune')
 
   const cameraSizeLabel =
     cameraScale === 'sm' ? t.nav.cameraSizeSm : cameraScale === 'md' ? t.nav.cameraSizeMd : t.nav.cameraSizeLg
@@ -142,6 +145,8 @@ export function MainLayout() {
       <footer className="border-t border-base-300 bg-base-100 px-4 py-4 text-center text-sm text-base-content/60">
         {t.nav.footer}
       </footer>
+
+      {tune && <TunePanel />}
     </div>
   )
 }

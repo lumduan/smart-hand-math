@@ -136,6 +136,62 @@ describe('cameraScale', () => {
   })
 })
 
+describe('autoSubmit settings', () => {
+  it('uses defaults (enabled, 1500ms prompt, 1000ms confirm)', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.autoSubmitEnabled).toBe(true)
+    expect(result.current.autoSubmitPromptMs).toBe(1500)
+    expect(result.current.autoSubmitConfirmMs).toBe(1000)
+  })
+
+  it('persists via the setters', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    act(() => {
+      result.current.setAutoSubmitEnabled(false)
+      result.current.setAutoSubmitPromptMs(800)
+      result.current.setAutoSubmitConfirmMs(600)
+    })
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({
+      autoSubmitEnabled: false,
+      autoSubmitPromptMs: 800,
+      autoSubmitConfirmMs: 600,
+    })
+  })
+
+  it('hydrates persisted autoSubmit settings', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ autoSubmitEnabled: false, autoSubmitPromptMs: 700, autoSubmitConfirmMs: 500 }),
+    )
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.autoSubmitEnabled).toBe(false)
+    expect(result.current.autoSubmitPromptMs).toBe(700)
+    expect(result.current.autoSubmitConfirmMs).toBe(500)
+  })
+
+  it('clamps out-of-range persisted ms into [200, 5000]', () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ autoSubmitPromptMs: 10, autoSubmitConfirmMs: 99999 }),
+    )
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.autoSubmitPromptMs).toBe(200)
+    expect(result.current.autoSubmitConfirmMs).toBe(5000)
+  })
+
+  it('falls back to the default when persisted ms is non-numeric', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ autoSubmitPromptMs: 'fast' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.autoSubmitPromptMs).toBe(1500)
+  })
+
+  it('coerces a non-boolean persisted enabled back to true', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ autoSubmitEnabled: 'yes' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.autoSubmitEnabled).toBe(true)
+  })
+})
+
 describe('cameraPermission', () => {
   it('is in-memory only: settable but never persisted', () => {
     const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
