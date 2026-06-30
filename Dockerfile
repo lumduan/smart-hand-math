@@ -26,7 +26,7 @@ RUN npm run build
 # ============================================================
 # Stage 2 — serve the static bundle with hardened nginx (non-root)
 # ============================================================
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.31-alpine AS production
 
 # Custom nginx.conf: the pid + temp paths live under /tmp so the unprivileged
 # user (UID 101, set below) can write them. No `user` directive — the container
