@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CameraView } from '@/components/camera/CameraView'
 import { Card } from '@/components/common/Card'
+import { useAppSettings } from '@/context/AppSettingsContext'
 import { useStrings } from '@/i18n/useStrings'
 
 /** Free-practice playground: see your finger count live, no pressure. */
 export function Learn() {
   const [detected, setDetected] = useState<number>(-1)
   const t = useStrings()
+  const { cameraScale } = useAppSettings()
+  const largeCamera = cameraScale === 'lg'
 
   return (
     <div className="space-y-6">
@@ -17,7 +20,7 @@ export function Learn() {
       </header>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
+        <Card className={largeCamera ? 'lg:col-span-full' : ''}>
           <CameraView onNumberChange={setDetected} />
         </Card>
 

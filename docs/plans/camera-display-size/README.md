@@ -1,7 +1,7 @@
 # Camera display size (Phase 8.1)
 
 > Part of [Phase 8 — Enhancement / Future Vision](../ROADMAP.md#phase-8--enhancement--future-vision).
-> Status: **planned**. Tech: React context + Tailwind (no new deps).
+> Status: **implemented**. Tech: React context + Tailwind (no new deps).
 
 Some users find the camera preview too small. Make it resizable to a persisted
 preference — including BIGGER than today (Large = full width).

@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useAppSettings } from '@/context/AppSettingsContext'
+import { CAMERA_SIZES, useAppSettings, type CameraScale } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useStrings } from '@/i18n/useStrings'
 import { LOCALES } from '@/i18n/strings'
@@ -13,12 +13,27 @@ const NAV_ROUTES = [
   { to: '/play', icon: '🧮', end: false, labelKey: 'play' as const },
 ]
 
+// Glyph grows with the size — small / medium / large black square (Phase 8.1).
+const CAMERA_SCALE_ICON: Record<CameraScale, string> = {
+  sm: '▪️',
+  md: '◼️',
+  lg: '⬛',
+}
+
 /** App shell: top navigation, routed content, footer. */
 export function MainLayout() {
-  const { muted, toggleMuted, mirrored, toggleMirrored, locale, setLocale } = useAppSettings()
+  const { muted, toggleMuted, mirrored, toggleMirrored, locale, setLocale, cameraScale, setCameraScale } =
+    useAppSettings()
   const audio = useAudio()
   const t = useStrings()
   const location = useLocation()
+
+  const cameraSizeLabel =
+    cameraScale === 'sm' ? t.nav.cameraSizeSm : cameraScale === 'md' ? t.nav.cameraSizeMd : t.nav.cameraSizeLg
+  const cycleCameraScale = () => {
+    const i = CAMERA_SIZES.indexOf(cameraScale)
+    return CAMERA_SIZES[(i + 1) % CAMERA_SIZES.length]
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-base-200">
@@ -65,6 +80,17 @@ export function MainLayout() {
                 </button>
               ))}
             </div>
+            <button
+              className="btn btn-ghost btn-sm btn-circle"
+              onClick={() => {
+                audio.playClick()
+                setCameraScale(cycleCameraScale())
+              }}
+              title={`${t.nav.cameraSizeAria}: ${cameraSizeLabel}`}
+              aria-label={`${t.nav.cameraSizeAria}: ${cameraSizeLabel}`}
+            >
+              {CAMERA_SCALE_ICON[cameraScale]}
+            </button>
             <button
               className="btn btn-ghost btn-sm btn-circle"
               onClick={() => {

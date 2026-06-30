@@ -215,11 +215,11 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 8.1 Camera display size
 
-- [ ] Persisted `cameraScale` setting (sm/md/lg) in `AppSettingsContext`
-- [ ] Navbar 3-step cycle control (matches the mirror/mute idiom)
-- [ ] `CameraView` caps width for `sm`; Play & Learn reflow to full width for `lg`
-- [ ] i18n labels in the `nav` block
-- [ ] Plan: [docs/plans/camera-display-size/README.md](./camera-display-size/README.md)
+- [x] Persisted `cameraScale` setting (sm/md/lg) in `AppSettingsContext`
+- [x] Navbar 3-step cycle control (matches the mirror/mute idiom)
+- [x] `CameraView` caps width for `sm`; Play & Learn reflow to full width for `lg`
+- [x] i18n labels in the `nav` block
+- [x] Plan: [docs/plans/camera-display-size/README.md](./camera-display-size/README.md)
 
 **Exit criteria:** users can resize the camera on Play and Learn (incl. full-width Large); choice persists across reloads; default unchanged (md = today's size).
 

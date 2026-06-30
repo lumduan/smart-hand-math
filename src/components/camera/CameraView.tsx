@@ -37,7 +37,7 @@ interface CameraViewProps {
  * `onNumberChange`.
  */
 export function CameraView({ onNumberChange, numHands = 2, className = '' }: CameraViewProps) {
-  const { mirrored, setCameraPermission } = useAppSettings()
+  const { mirrored, setCameraPermission, cameraScale } = useAppSettings()
   const audio = useAudio()
   const t = useStrings()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -121,7 +121,10 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
   const isLive = status === 'ready' || status === 'loading'
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-3xl bg-black aspect-video ${className}`}>
+    <div
+      className={`relative mx-auto w-full overflow-hidden rounded-3xl bg-black aspect-video ${className}`}
+      style={cameraScale === 'sm' ? { maxWidth: '60%' } : undefined}
+    >
       {/* Mirrored wrapper: video + skeleton overlay flip together */}
       <div className="absolute inset-0" style={{ transform: mirrored ? 'scaleX(-1)' : 'none' }}>
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay aria-label={t.camera.videoAria} />

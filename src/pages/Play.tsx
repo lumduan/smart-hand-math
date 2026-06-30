@@ -13,6 +13,7 @@ import {
   TIMED_SECONDS,
   useGame,
 } from '@/context/GameContext'
+import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useStrings } from '@/i18n/useStrings'
 import { motion } from 'framer-motion'
@@ -50,6 +51,8 @@ export function Play() {
   } = useGame()
   const audio = useAudio()
   const t = useStrings()
+  const { cameraScale } = useAppSettings()
+  const largeCamera = cameraScale === 'lg'
   const [detected, setDetected] = useState<number>(-1)
   const [padValue, setPadValue] = useState('')
 
@@ -216,10 +219,10 @@ export function Play() {
       )}
 
       <div className="grid gap-5 lg:grid-cols-2">
-        <CameraView onNumberChange={setDetected} />
+        <CameraView onNumberChange={setDetected} className={largeCamera ? 'lg:col-span-full' : ''} />
 
         {/* Fallback number entry for accessibility / no-camera testing */}
-        <Card>
+        <Card className={largeCamera ? 'lg:col-span-full lg:max-w-md lg:justify-self-center' : ''}>
           <p className="font-display font-bold">{t.play.padTitle}</p>
           <form
             className="mt-3 flex items-center gap-2"

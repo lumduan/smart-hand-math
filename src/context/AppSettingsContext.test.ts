@@ -20,6 +20,7 @@ describe('useAppSettings defaults', () => {
     expect(result.current.cameraPermission).toBe('prompt')
     expect(result.current.locale).toBe('en')
     expect(result.current.onboardingDismissed).toBe(false)
+    expect(result.current.cameraScale).toBe('md')
   })
 })
 
@@ -105,6 +106,33 @@ describe('locale', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ locale: 'fr' }))
     const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
     expect(result.current.locale).toBe('en')
+  })
+})
+
+describe('cameraScale', () => {
+  it('defaults to md and switches via setCameraScale', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.cameraScale).toBe('md')
+    act(() => result.current.setCameraScale('lg'))
+    expect(result.current.cameraScale).toBe('lg')
+  })
+
+  it('persists cameraScale to localStorage', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    act(() => result.current.setCameraScale('sm'))
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({ cameraScale: 'sm' })
+  })
+
+  it('hydrates a persisted cameraScale', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cameraScale: 'lg' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.cameraScale).toBe('lg')
+  })
+
+  it('coerces an unsupported persisted cameraScale back to md', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cameraScale: 'huge' }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.cameraScale).toBe('md')
   })
 })
 
