@@ -43,6 +43,8 @@ export function Timer({ seconds, running = true, onExpire }: TimerProps) {
   const urgent = remaining <= 5
   return (
     <div
+      role="timer"
+      aria-label={t.game.timerAria}
       className={`badge badge-lg font-display tabular-nums ${urgent ? 'badge-error animate-pulse' : 'badge-ghost'}`}
     >
       {t.game.timer(remaining)}

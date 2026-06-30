@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Modal } from '@/components/common/Modal'
 import { AppSettingsProvider } from '@/context/AppSettingsContext'
@@ -61,5 +61,39 @@ describe('Modal', () => {
     )
     await user.click(screen.getByRole('button', { name: 'Close modal' }))
     expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('is an accessible dialog (role/aria-modal/labelledby) when open', () => {
+    renderModal(
+      <Modal open onClose={() => {}} title="Game over">
+        body
+      </Modal>,
+    )
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveAttribute('aria-modal', 'true')
+    expect(dialog).toHaveAttribute('aria-labelledby', 'modal-title')
+    expect(screen.getByText('Game over')).toHaveAttribute('id', 'modal-title')
+  })
+
+  it('closes on Escape when dismissable', () => {
+    const onClose = vi.fn()
+    renderModal(
+      <Modal open onClose={onClose}>
+        body
+      </Modal>,
+    )
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('does not close on Escape when not dismissable', () => {
+    const onClose = vi.fn()
+    renderModal(
+      <Modal open dismissable={false} onClose={onClose}>
+        body
+      </Modal>,
+    )
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).not.toHaveBeenCalled()
   })
 })

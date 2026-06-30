@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
-import { FilesetResolver, HandLandmarker } from '@mediapipe/tasks-vision'
+import type { HandLandmarker } from '@mediapipe/tasks-vision'
 import type { Landmark, RawHandedness, TrackedHand } from '@/utils/fingerMathLogic'
 
 export type TrackerStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -21,14 +21,14 @@ interface UseHandTrackerResult {
   stop: () => void
 }
 
-const MODEL_URL =
-  import.meta.env.VITE_MEDIAPIPE_MODEL_URL ??
-  'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task'
-const WASM_URL =
-  import.meta.env.VITE_MEDIAPIPE_WASM_URL ??
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm'
+// Self-hosted by default (Phase 6): no CDN egress, works offline. Override via env.
+const MODEL_URL = import.meta.env.VITE_MEDIAPIPE_MODEL_URL ?? '/models/hand_landmarker.task'
+const WASM_URL = import.meta.env.VITE_MEDIAPIPE_WASM_URL ?? '/models/wasm'
 
 async function createLandmarker(numHands: number, delegate: 'GPU' | 'CPU'): Promise<HandLandmarker> {
+  // Dynamic import: keeps @mediapipe/tasks-vision in its own lazy chunk, fetched
+  // only when the camera actually starts (not on initial page load).
+  const { FilesetResolver, HandLandmarker } = await import('@mediapipe/tasks-vision')
   const fileset = await FilesetResolver.forVisionTasks(WASM_URL)
   try {
     return await HandLandmarker.createFromOptions(fileset, {

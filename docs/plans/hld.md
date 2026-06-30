@@ -247,7 +247,7 @@ makes the product COPPA / GDPR-K-friendlier by construction.
 | Camera video frames | **Nowhere** — consumed in-page by `detectForVideo` | Never serialized, uploaded, or stored. |
 | Hand landmarks / model inputs | **Nowhere** — processed in-page, discarded per frame | Only the resulting integer (0–99) ever reaches React state. |
 | Best score & settings | `localStorage` only, on the user's device | Keys `smartmath.best`, `smartmath.settings`. |
-| MediaPipe model (`.task`) + wasm | Fetched from a **CDN** by default | Overridable to self-hosted `public/models/` via `VITE_MEDIAPIPE_MODEL_URL` / `VITE_MEDIAPIPE_WASM_URL` for offline / max-privacy. |
+| MediaPipe model (`.task`) + wasm | **Self-hosted** in `public/models/` (Phase 6) | Default is local now (no CDN); the PWA runtime-caches it. Zero egress. |
 | Analytics / telemetry / accounts | **None** — not present in the app | Confirm by grep at review time. |
 
 **Operational controls**
@@ -259,5 +259,6 @@ makes the product COPPA / GDPR-K-friendlier by construction.
 - **Accessible without a camera:** the Play number-pad fallback keeps the game
   fully playable for privacy-conscious users, devices without webcams, and
   automated tests (see [`frd.md`](./frd.md) accessibility requirements).
-- **Verification going forward:** the Phase 6 privacy review will re-confirm
-  zero egress and produce a parent/teacher data-handling note.
+- **Verification (Phase 6, done):** zero egress re-confirmed — the model, wasm,
+  and font are all self-hosted (no CDN), and there is no analytics/telemetry.
+  Parent/teacher note: [`privacy/DATA-HANDLING.md`](./privacy/DATA-HANDLING.md).

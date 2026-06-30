@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
@@ -21,6 +22,9 @@ export function MainLayout() {
 
   return (
     <div className="flex min-h-screen flex-col bg-base-200">
+      <a href="#main" className="skip-link">
+        {t.nav.skipToContent}
+      </a>
       <header className="navbar sticky top-0 z-20 border-b border-base-300 bg-base-100/90 px-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2">
           <NavLink to="/" className="flex items-center gap-2 font-display text-xl font-extrabold text-primary">
@@ -87,7 +91,7 @@ export function MainLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
+      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
@@ -96,7 +100,15 @@ export function MainLayout() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
-            <Outlet />
+            <Suspense
+              fallback={
+                <div className="flex justify-center py-20">
+                  <span className="loading loading-spinner loading-lg text-primary" />
+                </div>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

@@ -181,7 +181,7 @@ export function Play() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-1 text-2xl">
+      <div className="flex items-center justify-center gap-1 text-2xl" role="status" aria-label={t.play.livesLabel(lives)}>
         {Array.from({ length: STARTING_LIVES }).map((_, i) => (
           <span key={i}>{i < lives ? '❤️' : '🤍'}</span>
         ))}

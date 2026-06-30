@@ -16,8 +16,8 @@ RUN npm ci
 COPY . .
 
 # Build-time env defaults; override with --build-arg for self-hosted models, etc.
-ARG VITE_MEDIAPIPE_MODEL_URL=https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
-ARG VITE_MEDIAPIPE_WASM_URL=https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm
+ARG VITE_MEDIAPIPE_MODEL_URL=/models/hand_landmarker.task
+ARG VITE_MEDIAPIPE_WASM_URL=/models/wasm
 ENV VITE_MEDIAPIPE_MODEL_URL=${VITE_MEDIAPIPE_MODEL_URL}
 ENV VITE_MEDIAPIPE_WASM_URL=${VITE_MEDIAPIPE_WASM_URL}
 

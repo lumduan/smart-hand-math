@@ -434,12 +434,13 @@ All browser-exposed variables use the `VITE_` prefix (see `.env.example`).
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `VITE_MEDIAPIPE_MODEL_URL` | Google CDN `.task` | Hand-landmarker model asset. |
-| `VITE_MEDIAPIPE_WASM_URL` | jsDelivr CDN | MediaPipe wasm folder. |
+| `VITE_MEDIAPIPE_MODEL_URL` | `/models/hand_landmarker.task` (self-hosted) | Hand-landmarker model asset. |
+| `VITE_MEDIAPIPE_WASM_URL` | `/models/wasm` (self-hosted) | MediaPipe wasm folder. |
 | `VITE_DEFAULT_VOLUME` | `0.6` | Default sound volume (0..1). |
 
-To self-host the model (full offline / privacy), download files into
-`public/models/` and set `VITE_MEDIAPIPE_MODEL_URL=/models/hand_landmarker.task`.
+The model + wasm are **self-hosted** by default in `public/models/` (Phase 6) —
+full offline + zero network egress. To use a CDN instead, set the URLs to the
+Google/jsDelivr endpoints (see `.env.example`).
 
 ---
 

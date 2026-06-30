@@ -1,9 +1,12 @@
+import { lazy } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { MainLayout } from '@/layouts/MainLayout'
-import { Home } from '@/pages/Home'
-import { Learn } from '@/pages/Learn'
-import { Play } from '@/pages/Play'
 import { useDocumentMeta } from '@/i18n/useDocumentMeta'
+
+// Lazy-loaded routes (code-split per page). Named exports need the `.default` shim.
+const Home = lazy(() => import('@/pages/Home').then((m) => ({ default: m.Home })))
+const Learn = lazy(() => import('@/pages/Learn').then((m) => ({ default: m.Learn })))
+const Play = lazy(() => import('@/pages/Play').then((m) => ({ default: m.Play })))
 
 export default function App() {
   useDocumentMeta()

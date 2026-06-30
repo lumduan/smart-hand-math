@@ -32,6 +32,7 @@ const en = {
     soundOn: 'Sound on',
     soundAria: 'Toggle sound',
     localeAria: 'Change language',
+    skipToContent: 'Skip to content',
     footer: 'Built with React · Vite · MediaPipe · Tailwind + DaisyUI',
   },
 
@@ -92,6 +93,7 @@ const en = {
     modeMissions: 'Missions',
     modeMissionsDesc: (goal: number) => `Answer ${goal} correctly to win!`,
     goalProgress: (done: number, total: number) => `🎯 ${done} / ${total}`,
+    livesLabel: (lives: number) => `${lives} lives remaining`,
     waiting: '✋ Waiting for your hand…',
     showing: (detected: number) => `You're showing ${detected}`,
     correct: (expected: number) => `✅ Correct! It's ${expected}`,
@@ -118,6 +120,7 @@ const en = {
     blocked: '⛔ Camera blocked',
     startAria: 'Start camera',
     stopAria: 'Stop camera',
+    videoAria: 'Webcam preview for finger counting',
     errorTitle: '⛔ Camera blocked',
     errorBody: (error: string) =>
       `${error}. Allow camera access in your browser, then tap ▶️ to try again. (Camera needs HTTPS or localhost.)`,
@@ -129,6 +132,7 @@ const en = {
     difficultyMedium: 'Medium',
     difficultyHard: 'Hard',
     timer: (remaining: number) => `⏱ ${remaining}s`,
+    timerAria: 'Countdown timer',
   },
 
   common: {

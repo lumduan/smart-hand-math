@@ -173,22 +173,22 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 6.1 Accessibility
 
-- [ ] WCAG AA audit: keyboard, screen-reader, focus order, contrast, `prefers-reduced-motion`
+- [x] WCAG AA audit: keyboard, screen-reader, focus order, contrast, `prefers-reduced-motion`
 
 ### 6.2 Performance
 
-- [ ] Bundle analysis + perf budget
-- [ ] Code-split / lazy-load MediaPipe and routes
+- [x] Bundle analysis (`build:analyze`) + perf budget
+- [x] Code-split / lazy-load MediaPipe (own chunk) and routes (React.lazy)
 
 ### 6.3 Offline / PWA
 
-- [ ] `docs/plans/offline/PoC/` — PWA manifest + service worker
-- [ ] Self-host MediaPipe model in `public/models/` (offline + privacy)
+- [x] PWA manifest + service worker (`vite-plugin-pwa`)
+- [x] Self-host MediaPipe model+wasm (+ Baloo 2 font) in `public/models` / `@fontsource` (offline + zero egress)
 
 ### 6.4 Hosting & Privacy
 
-- [ ] HTTPS guidance/config for non-localhost hosting (camera requires a secure context)
-- [ ] Privacy review: confirm zero egress; write a parent/teacher data-handling note
+- [x] HTTPS guidance ([hosting/HTTPS.md](./hosting/HTTPS.md)); camera requires a secure context
+- [x] Privacy review: zero egress confirmed; parent/teacher note ([privacy/DATA-HANDLING.md](./privacy/DATA-HANDLING.md))
 
 **Exit criteria:** a11y passes; Lighthouse target met; app works offline; privacy posture documented.
 
@@ -258,7 +258,7 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 6 — Accessibility, Performance & Privacy
+- **Active phase:** Phase 7 — Distribution & Release
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
@@ -266,7 +266,8 @@ Phase 0 (Bootstrap)
   - Phase 3 (UX Polish & Design System) — React 19; DaisyUI `cupcake` theme (ADR-0006); `framer-motion` + `canvas-confetti` animations; synthesized Web Audio SFX (ADR-0007, Howler removed); onboarding/privacy banner. 118 tests green.
   - Phase 4 (Internationalization) — all strings centralized in `src/i18n/strings.ts` (typed); `useStrings()` + `useDocumentMeta()`; persisted `locale` + EN/TH switcher; `th` stubbed (Phase 8 fills Thai). 126 tests green.
   - Phase 5 (Game Depth & Content) — Endless/Timed/Missions modes (Missions → win); sequences + comparison + division question types; win condition + `TIME_UP` (wires the Timer); level-up confetti + mission progress; adaptive-difficulty RFC-0002. 133 tests green.
+  - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
 - **In progress:**
   - nothing
-- **Known follow-ups (from `CLAUDE.md` §15):** none — see Phase 5+ roadmap
+- **Known follow-ups (from `CLAUDE.md` §15):** none — see Phase 7 (release)
 - **Blocked by:** nothing

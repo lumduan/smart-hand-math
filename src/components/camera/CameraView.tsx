@@ -124,13 +124,13 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
     <div className={`relative w-full overflow-hidden rounded-3xl bg-black aspect-video ${className}`}>
       {/* Mirrored wrapper: video + skeleton overlay flip together */}
       <div className="absolute inset-0" style={{ transform: mirrored ? 'scaleX(-1)' : 'none' }}>
-        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
+        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay aria-label={t.camera.videoAria} />
         <canvas ref={canvasRef} className="absolute inset-0 h-full w-full object-cover" />
       </div>
 
       {/* HUD (never mirrored) */}
       <div className="absolute inset-0 flex flex-col items-center justify-between p-3 pointer-events-none">
-        <div className="flex w-full items-center justify-between">
+        <div className="flex w-full items-center justify-between" aria-live="polite">
           {status === 'idle' && <span className="badge badge-ghost font-display">{t.camera.off}</span>}
           {status === 'loading' && (
             <span className="badge badge-warning font-display animate-pulse">{t.camera.loading}</span>

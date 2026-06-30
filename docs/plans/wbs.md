@@ -92,19 +92,19 @@
 > ROADMAP: [§Phase 6](./ROADMAP.md#phase-6--accessibility-performance--privacy)
 
 ### 6.1 Accessibility
-- [ ] **WCAG AA** audit: keyboard, screen-reader, focus order, contrast, `prefers-reduced-motion`
+- [x] **WCAG AA** audit: keyboard, screen-reader, focus order, focus-visible, `prefers-reduced-motion` (MotionConfig), modal dialog + skip-link + aria-live + pinch-zoom
 
 ### 6.2 Performance
-- [ ] Bundle analysis + perf budget
-- [ ] Code-split / lazy-load MediaPipe and routes
+- [x] Bundle analysis (`build:analyze`) + perf budget
+- [x] Code-split / lazy-load MediaPipe (own async chunk) and routes (React.lazy)
 
 ### 6.3 Offline / PWA
-- [ ] `docs/plans/offline/PoC/` — PWA manifest + service worker
-- [ ] **Self-host** the MediaPipe model in `public/models/` (offline + privacy)
+- [x] PWA manifest + service worker (`vite-plugin-pwa`); runtime-caches the self-hosted model/wasm
+- [x] **Self-host** MediaPipe model+wasm (+ Baloo 2 font) in `public/models` / `@fontsource` (offline + zero egress)
 
 ### 6.4 Hosting & privacy
-- [ ] HTTPS guidance/config for non-localhost hosting (camera requires a secure context)
-- [ ] Privacy review: re-confirm zero egress; write the parent/teacher data-handling note
+- [x] HTTPS guidance ([hosting/HTTPS.md](./hosting/HTTPS.md)); camera requires a secure context
+- [x] Privacy review: zero egress confirmed; parent/teacher note ([privacy/DATA-HANDLING.md](./privacy/DATA-HANDLING.md))
 
 ---
 
