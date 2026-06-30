@@ -158,10 +158,10 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 > Goal: replayable, age-appropriate, varied gameplay.
 
-- [ ] Question variety: more operators, missing-number, comparison, sequences
-- [ ] Game modes: timed / endless / missions
-- [ ] RFC: adaptive difficulty curve
-- [ ] Rewards: badges, streaks, level-up moments
+- [x] Question variety: more operators, missing-number, comparison, sequences
+- [x] Game modes: timed / endless / missions
+- [x] RFC: adaptive difficulty curve (RFC-0002)
+- [x] Rewards: streaks + level-up confetti + mission-progress (badges deferred)
 
 **Exit criteria:** multiple modes playable; difficulty scales with score; content reviewed for the target age range.
 
@@ -258,13 +258,14 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 5 — Game Depth & Content
+- **Active phase:** Phase 6 — Accessibility, Performance & Privacy
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
   - Phase 2 (Core Engine Verification & Quality) — vitest + jsdom + RTL (114 tests); finger-logic / math-generator / component / context tests; `src/utils` coverage gate met; `test` wired into CI; hardware-verified handedness default (`INVERT_HANDEDNESS = false`, ADR-0005)
   - Phase 3 (UX Polish & Design System) — React 19; DaisyUI `cupcake` theme (ADR-0006); `framer-motion` + `canvas-confetti` animations; synthesized Web Audio SFX (ADR-0007, Howler removed); onboarding/privacy banner. 118 tests green.
   - Phase 4 (Internationalization) — all strings centralized in `src/i18n/strings.ts` (typed); `useStrings()` + `useDocumentMeta()`; persisted `locale` + EN/TH switcher; `th` stubbed (Phase 8 fills Thai). 126 tests green.
+  - Phase 5 (Game Depth & Content) — Endless/Timed/Missions modes (Missions → win); sequences + comparison + division question types; win condition + `TIME_UP` (wires the Timer); level-up confetti + mission progress; adaptive-difficulty RFC-0002. 133 tests green.
 - **In progress:**
   - nothing
 - **Known follow-ups (from `CLAUDE.md` §15):** none — see Phase 5+ roadmap

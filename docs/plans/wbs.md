@@ -79,11 +79,11 @@
 > *Replayable, age-appropriate, varied gameplay.*
 > ROADMAP: [§Phase 5](./ROADMAP.md#phase-5--game-depth--content)
 
-- [ ] Question variety: more operators, missing-number, comparison, sequences
-- [ ] Game modes: timed / endless / missions
-- [ ] RFC: adaptive difficulty curve
-- [ ] Rewards: badges, streaks, level-up moments
-- [ ] **Resolve known gaps** flagged in [`hld.md` §6](./hld.md): wire a win condition (or drop the unreachable `won` status) and the orphaned `Timer` (timed mode)
+- [x] Question variety: more operators, missing-number, comparison, sequences (+ division)
+- [x] Game modes: timed / endless / missions
+- [x] RFC: adaptive difficulty curve (RFC-0002)
+- [x] Rewards: streaks + level-up confetti + mission-progress (badges deferred)
+- [x] **Resolved known gaps** from [`hld.md` §6](./hld.md): win condition (Missions → `won`) + orphaned `Timer` wired (Timed mode / `TIME_UP`)
 
 ---
 

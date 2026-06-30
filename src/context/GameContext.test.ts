@@ -4,17 +4,20 @@ import {
   reducer,
   initialState,
   STARTING_LIVES,
+  MISSION_GOAL,
   GameProvider,
   useGame,
   type GameState,
+  type GameMode,
 } from '@/context/GameContext'
 import { generateQuestion } from '@/utils/mathGenerator'
 
 /** A 'playing' state with a real easy question, for exercising ANSWER/NEXT. */
-function playing(score = 0, best = 0, lives = STARTING_LIVES): GameState {
+function playing(score = 0, best = 0, lives = STARTING_LIVES, mode: GameMode = 'endless'): GameState {
   return {
     ...initialState(best),
     status: 'playing',
+    mode,
     score,
     best,
     lives,
@@ -42,8 +45,9 @@ describe('initialState', () => {
 describe('reducer', () => {
   describe('START', () => {
     it('moves to playing with an easy question, preserving best', () => {
-      const after = reducer(initialState(42), { type: 'START' })
+      const after = reducer(initialState(42), { type: 'START', mode: 'timed' })
       expect(after.status).toBe('playing')
+      expect(after.mode).toBe('timed')
       expect(after.difficulty).toBe('easy')
       expect(after.currentQuestion).not.toBeNull()
       expect(after.best).toBe(42)
@@ -91,6 +95,19 @@ describe('reducer', () => {
       const s = initialState(0)
       expect(reducer(s, { type: 'ANSWER', given: 5 })).toBe(s)
     })
+
+    it('missions mode wins when the goal is reached', () => {
+      let s = playing(MISSION_GOAL - 1, 0, STARTING_LIVES, 'missions')
+      s = reducer(s, { type: 'ANSWER', given: s.currentQuestion!.answer })
+      expect(s.status).toBe('won')
+      expect(s.score).toBe(MISSION_GOAL)
+    })
+
+    it('endless mode does not win on score', () => {
+      let s = playing(999, 0, STARTING_LIVES, 'endless')
+      s = reducer(s, { type: 'ANSWER', given: s.currentQuestion!.answer })
+      expect(s.status).toBe('playing')
+    })
   })
 
   describe('NEXT', () => {
@@ -124,6 +141,18 @@ describe('reducer', () => {
       expect(after.score).toBe(3)
     })
   })
+
+  describe('TIME_UP', () => {
+    it('ends a playing round as lost', () => {
+      const after = reducer(playing(), { type: 'TIME_UP' })
+      expect(after.status).toBe('lost')
+    })
+
+    it('is a no-op when not playing', () => {
+      const s = initialState(0)
+      expect(reducer(s, { type: 'TIME_UP' })).toBe(s)
+    })
+  })
 })
 
 describe('useGame hook', () => {
@@ -136,7 +165,7 @@ describe('useGame hook', () => {
   it('exposes the game API inside a provider and can start a round', () => {
     const { result } = renderHook(() => useGame(), { wrapper: GameProvider })
     expect(result.current.status).toBe('idle')
-    act(() => result.current.start())
+    act(() => result.current.start('endless'))
     expect(result.current.status).toBe('playing')
     expect(result.current.currentQuestion).not.toBeNull()
   })

@@ -8,11 +8,15 @@
  *   • easy   → single-hand digits, answer 0..9
  *   • medium → up to two hands, answer 0..50
  *   • hard   → two hands,         answer 0..99
+ *
+ * `text` carries the FULL display string (including any " = ?" / "?"). Operators
+ * are universal mathematical notation, not translatable; any surrounding WORDS
+ * (e.g. "show the bigger number") live in the i18n prompt, not here.
  */
 
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
-export type Operator = '+' | '-' | '×'
+export type Operator = '+' | '-' | '×' | '÷' | 'seq' | 'compare'
 
 export interface MathQuestion {
   id: string
@@ -37,26 +41,37 @@ export function difficultyForScore(score: number): Difficulty {
   return 'hard'
 }
 
+/** Difficulty tier implied by a per-difficulty max answer. */
+function tierOf(maxAnswer: number): Difficulty {
+  return maxAnswer <= 9 ? 'easy' : maxAnswer <= 50 ? 'medium' : 'hard'
+}
+
 // --- per-range builders ---------------------------------------------------
 
 function addition(maxAnswer: number): MathQuestion {
   const a = randInt(0, maxAnswer)
   const b = randInt(0, maxAnswer - a)
-  return { id: newId(), text: `${a} + ${b}`, answer: a + b, op: '+', difficulty: 'easy' }
+  return { id: newId(), text: `${a} + ${b} = ?`, answer: a + b, op: '+', difficulty: tierOf(maxAnswer) }
 }
 
 function subtraction(maxAnswer: number): MathQuestion {
   const a = randInt(0, maxAnswer)
   const b = randInt(0, a)
-  const difficulty: Difficulty = maxAnswer <= 9 ? 'easy' : maxAnswer <= 50 ? 'medium' : 'hard'
-  return { id: newId(), text: `${a} − ${b}`, answer: a - b, op: '-', difficulty }
+  return { id: newId(), text: `${a} − ${b} = ?`, answer: a - b, op: '-', difficulty: tierOf(maxAnswer) }
 }
 
 function multiplication(maxAnswer: number): MathQuestion {
-  const difficulty: Difficulty = maxAnswer <= 9 ? 'easy' : maxAnswer <= 50 ? 'medium' : 'hard'
   const a = randInt(2, 9)
   const b = randInt(0, Math.floor(maxAnswer / a))
-  return { id: newId(), text: `${a} × ${b}`, answer: a * b, op: '×', difficulty }
+  return { id: newId(), text: `${a} × ${b} = ?`, answer: a * b, op: '×', difficulty: tierOf(maxAnswer) }
+}
+
+/** "12 ÷ 3 = ?" — built divisor-first so the quotient is always an integer. */
+function division(maxAnswer: number): MathQuestion {
+  const divisor = randInt(2, 9)
+  const quotient = randInt(0, Math.floor(maxAnswer / divisor))
+  const dividend = divisor * quotient
+  return { id: newId(), text: `${dividend} ÷ ${divisor} = ?`, answer: quotient, op: '÷', difficulty: tierOf(maxAnswer) }
 }
 
 /**
@@ -65,7 +80,7 @@ function multiplication(maxAnswer: number): MathQuestion {
  */
 function missingNumber(maxAnswer: number): MathQuestion {
   const x = randInt(0, maxAnswer) // the value the player must show
-  const difficulty: Difficulty = maxAnswer <= 50 ? 'medium' : 'hard'
+  const difficulty = tierOf(maxAnswer)
   if (Math.random() < 0.5) {
     const a = randInt(0, maxAnswer - x)
     return { id: newId(), text: `${a} + ? = ${a + x}`, answer: x, op: '+', difficulty }
@@ -74,10 +89,23 @@ function missingNumber(maxAnswer: number): MathQuestion {
   return { id: newId(), text: `${a} − ? = ${a - x}`, answer: x, op: '-', difficulty }
 }
 
-// Patch the difficulty label to match the caller's tier for add (it has no
-// maxAnswer-tier signal of its own).
-function withDifficulty(q: MathQuestion, difficulty: Difficulty): MathQuestion {
-  return { ...q, difficulty }
+/** "2, 4, 6, ?" — show the next term. */
+function sequence(maxAnswer: number): MathQuestion {
+  const step = randInt(1, maxAnswer <= 9 ? 2 : 5)
+  const start = randInt(0, Math.max(0, maxAnswer - step * 3))
+  const a = start
+  const b = a + step
+  const c = b + step
+  const ans = c + step
+  return { id: newId(), text: `${a}, ${b}, ${c}, ?`, answer: ans, op: 'seq', difficulty: tierOf(maxAnswer) }
+}
+
+/** "7 · 3" — show the bigger of the two (the prompt says so). Distinct numbers. */
+function comparison(maxAnswer: number): MathQuestion {
+  const a = randInt(0, maxAnswer)
+  let b = randInt(0, maxAnswer)
+  if (a === b) b = (b + 1) % (maxAnswer + 1)
+  return { id: newId(), text: `${a} · ${b}`, answer: Math.max(a, b), op: 'compare', difficulty: tierOf(maxAnswer) }
 }
 
 /** Generate a single question for the given difficulty. */
@@ -85,23 +113,29 @@ export function generateQuestion(difficulty: Difficulty = 'easy'): MathQuestion 
   switch (difficulty) {
     case 'easy': {
       const roll = Math.random()
-      if (roll < 0.45) return addition(9)
-      if (roll < 0.9) return subtraction(9)
-      return multiplication(9)
+      if (roll < 0.35) return addition(9)
+      if (roll < 0.70) return subtraction(9)
+      if (roll < 0.85) return multiplication(9)
+      return comparison(9)
     }
     case 'medium': {
       const roll = Math.random()
-      if (roll < 0.3) return withDifficulty(addition(50), 'medium')
-      if (roll < 0.6) return subtraction(50)
-      if (roll < 0.85) return multiplication(50)
-      return missingNumber(50)
+      if (roll < 0.2) return addition(50)
+      if (roll < 0.4) return subtraction(50)
+      if (roll < 0.58) return multiplication(50)
+      if (roll < 0.74) return missingNumber(50)
+      if (roll < 0.88) return sequence(50)
+      return comparison(50)
     }
     case 'hard': {
       const roll = Math.random()
-      if (roll < 0.3) return withDifficulty(addition(99), 'hard')
-      if (roll < 0.6) return subtraction(99)
-      if (roll < 0.85) return multiplication(99)
-      return missingNumber(99)
+      if (roll < 0.16) return addition(99)
+      if (roll < 0.32) return subtraction(99)
+      if (roll < 0.48) return multiplication(99)
+      if (roll < 0.64) return division(99)
+      if (roll < 0.80) return missingNumber(99)
+      if (roll < 0.90) return sequence(99)
+      return comparison(99)
     }
     default:
       return addition(9)

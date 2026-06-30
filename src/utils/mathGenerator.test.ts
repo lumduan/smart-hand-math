@@ -7,7 +7,7 @@ import {
 } from '@/utils/mathGenerator'
 
 const MAX_ANSWER: Record<Difficulty, number> = { easy: 9, medium: 50, hard: 99 }
-const VALID_OPS: Operator[] = ['+', '-', '×']
+const VALID_OPS: Operator[] = ['+', '-', '×', '÷', 'seq', 'compare']
 const SAMPLE = 1000
 
 describe('difficultyForScore', () => {
@@ -39,7 +39,7 @@ describe('generateQuestion — range & shape invariants', () => {
         expect(questions.every((q) => q.difficulty === difficulty)).toBe(true)
       })
 
-      it('op is always +, -, or ×', () => {
+      it('op is always a known operator', () => {
         for (const q of questions) expect(VALID_OPS).toContain(q.op)
       })
 
@@ -76,5 +76,45 @@ describe('generateQuestion — range & shape invariants', () => {
 
   it('defaults to easy when called with no argument', () => {
     expect(generateQuestion().difficulty).toBe('easy')
+  })
+})
+
+describe('new question types (hard sample)', () => {
+  const hard = Array.from({ length: 2000 }, () => generateQuestion('hard'))
+
+  it('division: "a ÷ b = ?" with an integer quotient', () => {
+    const divs = hard.filter((q) => q.op === '÷')
+    expect(divs.length).toBeGreaterThan(0)
+    for (const q of divs) {
+      const m = q.text.match(/^(\d+) ÷ (\d+) = \?$/)!
+      expect(m).toBeTruthy()
+      expect(Number(m[1]) / Number(m[2])).toBe(q.answer)
+    }
+  })
+
+  it('sequence: "a, b, c, ?" with a constant step', () => {
+    const seqs = hard.filter((q) => q.op === 'seq')
+    expect(seqs.length).toBeGreaterThan(0)
+    for (const q of seqs) {
+      const m = q.text.match(/^(\d+), (\d+), (\d+), \?$/)!
+      expect(m).toBeTruthy()
+      const nums = [Number(m[1]), Number(m[2]), Number(m[3])]
+      const step = nums[1] - nums[0]
+      expect(nums[2] - nums[1]).toBe(step)
+      expect(q.answer).toBe(nums[2] + step)
+    }
+  })
+
+  it('comparison: "a · b", answer is the larger of two distinct operands', () => {
+    const cmps = hard.filter((q) => q.op === 'compare')
+    expect(cmps.length).toBeGreaterThan(0)
+    for (const q of cmps) {
+      const m = q.text.match(/^(\d+) · (\d+)$/)!
+      expect(m).toBeTruthy()
+      const a = Number(m[1])
+      const b = Number(m[2])
+      expect(a).not.toBe(b)
+      expect(q.answer).toBe(Math.max(a, b))
+    }
   })
 })

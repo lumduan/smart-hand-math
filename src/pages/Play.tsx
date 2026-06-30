@@ -6,21 +6,34 @@ import { Card } from '@/components/common/Card'
 import { Modal } from '@/components/common/Modal'
 import { LevelBadge } from '@/components/game/LevelBadge'
 import { ScoreBoard } from '@/components/game/ScoreBoard'
-import { useGame } from '@/context/GameContext'
+import { Timer } from '@/components/game/Timer'
+import {
+  MISSION_GOAL,
+  STARTING_LIVES,
+  TIMED_SECONDS,
+  useGame,
+} from '@/context/GameContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useStrings } from '@/i18n/useStrings'
 import { motion } from 'framer-motion'
 import { burst, celebrate } from '@/utils/confetti'
 
-const STARTING_LIVES = 3
 /** Anti-tremor gate: the answer must be held steady this long before it commits. */
 const ANSWER_HOLD_MS = 500
 /** Largest answer the player can show with two Soroban hands. */
 const MAX_ANSWER = 99
 
+/** Idle-screen mode cards (icon/title/desc come from the i18n dictionary). */
+const MODES = [
+  { mode: 'endless', icon: '♾️' },
+  { mode: 'timed', icon: '⏱️' },
+  { mode: 'missions', icon: '🎯' },
+] as const
+
 export function Play() {
   const {
     status,
+    mode,
     currentQuestion,
     score,
     best,
@@ -32,6 +45,7 @@ export function Play() {
     start,
     answer,
     next,
+    timeUp,
     reset,
   } = useGame()
   const audio = useAudio()
@@ -42,6 +56,7 @@ export function Play() {
   // Confirmation window + per-question lock to avoid double submissions.
   const confirmStartedAt = useRef(0)
   const submittedFor = useRef<string | null>(null)
+  const prevLevelRef = useRef(level)
 
   const submit = useCallback(
     (n: number) => {
@@ -96,27 +111,51 @@ export function Play() {
     return () => clearTimeout(timer)
   }, [lastAnswer, status, audio, next, streak])
 
+  // Level-up reward: confetti when the level increases.
+  useEffect(() => {
+    if (level > prevLevelRef.current) celebrate()
+    prevLevelRef.current = level
+  }, [level])
+
   const gameOver = status === 'lost' || status === 'won'
 
-  // ---- Idle / Start screen -------------------------------------------------
+  // Op-aware question prompt (comparison/sequence have their own wording).
+  const prompt =
+    currentQuestion?.op === 'compare'
+      ? t.play.promptBigger
+      : currentQuestion?.op === 'seq'
+        ? t.play.promptNext
+        : t.play.prompt
+
+  // ---- Idle / mode-picker screen ------------------------------------------
   if (status === 'idle') {
+    const modeCards = {
+      endless: { title: t.play.modeEndless, desc: t.play.modeEndlessDesc },
+      timed: { title: t.play.modeTimed, desc: t.play.modeTimedDesc(TIMED_SECONDS) },
+      missions: { title: t.play.modeMissions, desc: t.play.modeMissionsDesc(MISSION_GOAL) },
+    } as const
     return (
       <div className="mx-auto max-w-xl text-center">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <Card>
             <h1 className="font-display text-3xl font-extrabold text-primary">{t.play.idleTitle}</h1>
             <p className="mt-2 text-base-content/70">{t.play.idleBody(STARTING_LIVES)}</p>
-            <div className="mt-6 flex justify-center">
-              <Button
-                size="lg"
-                variant="primary"
-                onClick={() => {
-                  audio.playClick()
-                  start()
-                }}
-              >
-                {t.play.idleCta}
-              </Button>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              {MODES.map((m) => (
+                <button
+                  key={m.mode}
+                  className="flex h-auto flex-col gap-1 rounded-2xl border border-base-300 bg-base-100 px-3 py-4 font-display transition hover:border-primary hover:shadow-md"
+                  onClick={() => {
+                    audio.playClick()
+                    start(m.mode)
+                  }}
+                  aria-label={modeCards[m.mode].title}
+                >
+                  <span className="text-3xl">{m.icon}</span>
+                  <span className="text-lg font-extrabold">{modeCards[m.mode].title}</span>
+                  <span className="text-xs font-normal text-base-content/60">{modeCards[m.mode].desc}</span>
+                </button>
+              ))}
             </div>
           </Card>
         </motion.div>
@@ -129,7 +168,17 @@ export function Play() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <LevelBadge level={level} difficulty={difficulty} />
-        <ScoreBoard score={score} best={best} streak={streak} />
+        <div className="flex flex-wrap items-center gap-2">
+          {mode === 'missions' && (
+            <span className="badge badge-lg badge-accent font-display">
+              {t.play.goalProgress(score, MISSION_GOAL)}
+            </span>
+          )}
+          {mode === 'timed' && (
+            <Timer seconds={TIMED_SECONDS} running={status === 'playing'} onExpire={timeUp} />
+          )}
+          <ScoreBoard score={score} best={best} streak={streak} />
+        </div>
       </div>
 
       <div className="flex items-center justify-center gap-1 text-2xl">
@@ -140,11 +189,8 @@ export function Play() {
 
       {currentQuestion && (
         <Card className="items-center text-center">
-          <p className="font-display text-base-content/60">{t.play.prompt}</p>
-          <div className="my-2 font-display text-7xl font-extrabold text-primary">
-            {currentQuestion.text}
-            {t.play.answerSuffix}
-          </div>
+          <p className="font-display text-base-content/60">{prompt}</p>
+          <div className="my-2 font-display text-7xl font-extrabold text-primary">{currentQuestion.text}</div>
 
           {lastAnswer ? (
             <motion.div
@@ -219,13 +265,7 @@ export function Play() {
           </p>
           <p className="text-base-content/60">{t.play.bestLabel(best)}</p>
           <div className="mt-5 flex justify-center gap-3">
-            <Button
-              variant="primary"
-              onClick={() => {
-                audio.playClick()
-                start()
-              }}
-            >
+            <Button variant="primary" onClick={reset}>
               {t.play.playAgain}
             </Button>
             <Link to="/">

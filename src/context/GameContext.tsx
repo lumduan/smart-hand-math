@@ -16,6 +16,10 @@ import {
 
 export type GameStatus = 'idle' | 'playing' | 'won' | 'lost'
 
+/** A game mode (Phase 5). Endless = play till you lose; Timed = beat the clock;
+ *  Missions = reach MISSION_GOAL correct answers to win. */
+export type GameMode = 'endless' | 'timed' | 'missions'
+
 export interface AnswerResult {
   correct: boolean
   given: number
@@ -24,6 +28,7 @@ export interface AnswerResult {
 
 export interface GameState {
   status: GameStatus
+  mode: GameMode
   score: number
   best: number
   streak: number
@@ -35,13 +40,18 @@ export interface GameState {
 }
 
 export type Action =
-  | { type: 'START' }
+  | { type: 'START'; mode: GameMode }
   | { type: 'ANSWER'; given: number }
   | { type: 'NEXT' }
+  | { type: 'TIME_UP' }
   | { type: 'RESET' }
   | { type: 'HYDRATE_BEST'; best: number }
 
 export const STARTING_LIVES = 3
+/** Missions mode: correct answers required to win. */
+export const MISSION_GOAL = 10
+/** Timed mode: seconds on the clock. */
+export const TIMED_SECONDS = 60
 
 function levelForScore(score: number): number {
   return Math.floor(score / 5) + 1
@@ -50,6 +60,7 @@ function levelForScore(score: number): number {
 export function initialState(best = 0): GameState {
   return {
     status: 'idle',
+    mode: 'endless',
     score: 0,
     best,
     streak: 0,
@@ -71,6 +82,7 @@ export function reducer(state: GameState, action: Action): GameState {
       return {
         ...initialState(state.best),
         status: 'playing',
+        mode: action.mode,
         difficulty,
         currentQuestion: generateQuestion(difficulty),
       }
@@ -83,6 +95,7 @@ export function reducer(state: GameState, action: Action): GameState {
 
       if (correct) {
         const score = state.score + 1
+        const won = state.mode === 'missions' && score >= MISSION_GOAL
         return {
           ...state,
           score,
@@ -90,6 +103,7 @@ export function reducer(state: GameState, action: Action): GameState {
           streak: state.streak + 1,
           level: levelForScore(score),
           difficulty: difficultyForScore(score),
+          status: won ? 'won' : 'playing',
           lastAnswer: { correct: true, given: action.given, expected },
         }
       }
@@ -102,6 +116,11 @@ export function reducer(state: GameState, action: Action): GameState {
         lastAnswer: { correct: false, given: action.given, expected },
       }
     }
+
+    case 'TIME_UP':
+      // Timed mode only dispatches this; ends the round as a loss.
+      if (state.status !== 'playing') return state
+      return { ...state, status: 'lost' }
 
     case 'NEXT': {
       if (state.status !== 'playing') return state
@@ -123,9 +142,10 @@ export function reducer(state: GameState, action: Action): GameState {
 const BEST_KEY = 'smartmath.best'
 
 interface GameApi extends GameState {
-  start: () => void
+  start: (mode: GameMode) => void
   answer: (given: number) => void
   next: () => void
+  timeUp: () => void
   reset: () => void
 }
 
@@ -151,14 +171,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
   }, [state.best])
 
-  const start = useCallback(() => dispatch({ type: 'START' }), [])
+  const start = useCallback((mode: GameMode) => dispatch({ type: 'START', mode }), [])
   const answer = useCallback((given: number) => dispatch({ type: 'ANSWER', given }), [])
   const next = useCallback(() => dispatch({ type: 'NEXT' }), [])
+  const timeUp = useCallback(() => dispatch({ type: 'TIME_UP' }), [])
   const reset = useCallback(() => dispatch({ type: 'RESET' }), [])
 
   const value = useMemo<GameApi>(
-    () => ({ ...state, start, answer, next, reset }),
-    [state, start, answer, next, reset],
+    () => ({ ...state, start, answer, next, timeUp, reset }),
+    [state, start, answer, next, timeUp, reset],
   )
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>

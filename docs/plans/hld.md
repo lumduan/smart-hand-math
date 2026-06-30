@@ -229,11 +229,10 @@ discussion has an accurate picture, and are scheduled in
 - **User-facing strings are centralized** in `src/i18n/strings.ts`, consumed via
   `useStrings()`; the active `locale` is persisted in `AppSettingsContext`
   (Phase 4). `th` is a structural stub — real Thai is Phase 8.
-- **`GameStatus 'won'` is unreachable** — no reducer transition sets it (the game
-  is endless until you lose); `Play.tsx` already has the win UI → resolve in
-  Phase 5 (add a win condition or drop the branch).
-- **`components/game/Timer.tsx` is orphaned** — no timed mode wires it yet →
-  Phase 5.
+- **Win condition + timed mode resolved (Phase 5)** — Missions mode sets
+  `status:'won'` at `score >= MISSION_GOAL` (activating the win UI/audio/
+  confetti that were already wired); Timed mode renders `Timer` and a `TIME_UP`
+  action → `'lost'`. Game modes: Endless / Timed / Missions.
 
 ---
 
