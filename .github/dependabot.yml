@@ -1,27 +1,36 @@
 version: 2
 updates:
-  # Keep npm dependencies fresh (weekly).
+  # npm — patch/minor only (grouped). Major bumps are intentional migrations.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       react:
         patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
       build:
         patterns: ["vite", "@vitejs/plugin-react", "tailwindcss", "daisyui", "postcss", "autoprefixer"]
 
-  # Keep GitHub Actions versions fresh.
+  # GitHub Actions — patch/minor only.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # Keep the base Docker images fresh.
+  # Base Docker images — patch/minor only.
   - package-ecosystem: docker
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
