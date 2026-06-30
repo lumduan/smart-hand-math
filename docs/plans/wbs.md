@@ -112,10 +112,10 @@
 > *One-command deploy and a tagged v1.0.0.*
 > ROADMAP: [§Phase 7](./ROADMAP.md#phase-7--distribution--release)
 
-- [ ] **nginx hardening**: gzip, cache headers, healthcheck, non-root user
-- [ ] Deploy **CI/CD** (static host, e.g. GitHub Pages); optional GHCR image publish
-- [ ] `RELEASING.md` runbook + `CHANGELOG.md` + semantic versioning
-- [ ] Publish **v1.0.0** GitHub release
+- [x] **nginx hardening**: gzip, cache headers, security headers, healthcheck, non-root (UID 101)
+- [x] Deploy **CI/CD** — tag-driven GHCR image publish (`release.yml`, `:vX.Y.Z` + `:latest`)
+- [x] `RELEASING.md` runbook + `CHANGELOG.md` + semantic versioning (1.0.0)
+- [x] Publish **v1.0.0** GitHub release
 
 ---
 

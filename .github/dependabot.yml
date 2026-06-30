@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # Keep npm dependencies fresh (weekly).
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns: ["react", "react-dom", "@types/react", "@types/react-dom"]
+      build:
+        patterns: ["vite", "@vitejs/plugin-react", "tailwindcss", "daisyui", "postcss", "autoprefixer"]
+
+  # Keep GitHub Actions versions fresh.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Keep the base Docker images fresh.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3

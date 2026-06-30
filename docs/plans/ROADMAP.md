@@ -198,10 +198,10 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 > Goal: one-command deploy and a tagged v1.0.0.
 
-- [ ] nginx hardening: gzip, cache headers, healthcheck, non-root user
-- [ ] Deploy CI/CD (GitHub Pages or static host); optional GHCR image publish
-- [ ] `RELEASING.md` runbook + `CHANGELOG.md` + semantic versioning
-- [ ] Publish **v1.0.0** GitHub release
+- [x] nginx hardening: gzip, cache headers, healthcheck, non-root user
+- [x] Deploy CI/CD — GHCR image publish (tag-driven `release.yml`)
+- [x] `RELEASING.md` runbook + `CHANGELOG.md` + semantic versioning
+- [x] Publish **v1.0.0** GitHub release
 
 **Exit criteria:** fresh clone + `docker compose --profile prod up` → live app; tagged release published.
 
@@ -258,7 +258,7 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** Phase 7 — Distribution & Release
+- **Active phase:** — MVP complete (Phases 0–7); Phase 8 (enhancements) optional
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
@@ -267,7 +267,8 @@ Phase 0 (Bootstrap)
   - Phase 4 (Internationalization) — all strings centralized in `src/i18n/strings.ts` (typed); `useStrings()` + `useDocumentMeta()`; persisted `locale` + EN/TH switcher; `th` stubbed (Phase 8 fills Thai). 126 tests green.
   - Phase 5 (Game Depth & Content) — Endless/Timed/Missions modes (Missions → win); sequences + comparison + division question types; win condition + `TIME_UP` (wires the Timer); level-up confetti + mission progress; adaptive-difficulty RFC-0002. 133 tests green.
   - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
+  - Phase 7 (Distribution & Release) — hardened non-root nginx (gzip/cache/security headers + healthcheck); tag-driven GHCR `release.yml`; v1.0.0 + CHANGELOG/RELEASING/dependabot; README refresh. Published v1.0.0.
 - **In progress:**
   - nothing
-- **Known follow-ups (from `CLAUDE.md` §15):** none — see Phase 7 (release)
+- **MVP (Phases 0–7) complete.** Phase 8 (enhancements) is optional.
 - **Blocked by:** nothing
