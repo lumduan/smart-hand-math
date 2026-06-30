@@ -209,7 +209,51 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ## Phase 8 — Enhancement / Future Vision
 
-> Optional upgrades after v1.0.0.
+> Goal: post-v1.0 enhancements. Two near-term usability items (camera sizing,
+> auto-submit) are scheduled next; Lessons is drafted as a framework only (to be
+> detailed later); the remaining items are optional/deferred.
+
+### 8.1 Camera display size
+
+- [ ] Persisted `cameraScale` setting (sm/md/lg) in `AppSettingsContext`
+- [ ] Navbar 3-step cycle control (matches the mirror/mute idiom)
+- [ ] `CameraView` caps width for `sm`; Play & Learn reflow to full width for `lg`
+- [ ] i18n labels in the `nav` block
+- [ ] Plan: [docs/plans/camera-display-size/README.md](./camera-display-size/README.md)
+
+**Exit criteria:** users can resize the camera on Play and Learn (incl. full-width Large); choice persists across reloads; default unchanged (md = today's size).
+
+### 8.2 Auto-submit (gesture-held answer commit)
+
+- [ ] RFC-0003 — behavioral change to the submit flow (replace vs coexist)
+- [ ] `useAutoSubmit` two-stage timer (T1 prompt, T2 commit), time-driven loop
+- [ ] Inline prompt UI + progress ring (`aria-live`); framer-motion
+- [ ] Settings: `autoSubmitEnabled` / `autoSubmitPromptMs` / `autoSubmitConfirmMs`
+- [ ] `?tune` panel for experimentation → record chosen defaults in ADR-0008
+- [ ] Plan: [docs/plans/auto-submit/README.md](./auto-submit/README.md)
+
+**Exit criteria:** a held gesture visibly prompts then commits; cancel on change / no-hand; timing tunable; the 500ms-fast-commit decision resolved and documented.
+
+### 8.3 Lessons / curriculum (framework)
+
+> Framework only — to be detailed later. Sketches the path from free-practice (Learn) to a guided curriculum. No code yet; full RFC deferred.
+
+- **Goal:** structured lessons that teach Soroban finger-math progressively, reusing the existing engine, generator, and camera input.
+- **Groundwork needed first:**
+  - Routing: lazy `/lessons` and `/lessons/:id` alongside `/`, `/learn`, `/play`.
+  - Lesson data model: `{ id, title, objective, steps[], targetNumbers[], assessment }` (data-only, e.g. `src/content/lessons.ts`).
+  - Progress tracking: per-lesson completion in `localStorage` (new context or extend `AppSettings`/`Game`).
+  - Reuse (no new CV pipeline): `fingerMathLogic` (recognition), `mathGenerator` (problems), `CameraView` (input).
+- **Draft lesson outline (framework):**
+  - Lesson 1 — Counting with one hand (0–9): show & recognize each Soroban digit.
+  - Lesson 2 — Counting with two hands (0–99): tens (left) + ones (right) place value.
+  - Lesson 3 (…) — Addition / subtraction with finger math.
+  - "…" further lessons TBD (times tables, comparison, sequences).
+- **Status:** FRAMEWORK — outline only; scope, age bands, and assessment model to be specified in a later RFC.
+
+**Exit criteria (framework):** outline agreed; no code yet.
+
+### 8.4 Longer-term / future vision (deferred)
 
 - [ ] Parent/teacher dashboard (local-only progress + analytics)
 - [ ] Classroom / multi-profile mode
@@ -258,7 +302,7 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** — MVP complete (Phases 0–7); Phase 8 (enhancements) optional
+- **Active phase:** — Phase 8.1 / 8.2 in planning (RFC-0003 for AutoSubmit); 8.3 Lessons is a framework; build to follow
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
@@ -269,6 +313,6 @@ Phase 0 (Bootstrap)
   - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
   - Phase 7 (Distribution & Release) — hardened non-root nginx (gzip/cache/security headers + healthcheck); tag-driven GHCR `release.yml`; v1.0.0 + CHANGELOG/RELEASING/dependabot; README refresh. Published v1.0.0.
 - **In progress:**
-  - nothing
-- **MVP (Phases 0–7) complete.** Phase 8 (enhancements) is optional.
+  - Phase 8 docs — roadmap framework + feature plans: [camera-display-size](./camera-display-size/README.md), [auto-submit](./auto-submit/README.md) (+ [RFC-0003](./rfc/RFC-0003-auto-submit.md)); Lessons (8.3) framework only
+- **MVP (Phases 0–7) complete.** Phase 8 enhancements now being scheduled — 8.1 / 8.2 next, 8.3 Lessons deferred to a later RFC.
 - **Blocked by:** nothing
