@@ -1,7 +1,7 @@
 # Auto-submit — gesture-held answer commit (Phase 8.2)
 
 > Part of [Phase 8 — Enhancement / Future Vision](../ROADMAP.md#phase-8--enhancement--future-vision).
-> Status: **planned**. Related: [RFC-0003](../rfc/RFC-0003-auto-submit.md).
+> Status: **implemented** (timing tuning → ADR-0008 pending). Related: [RFC-0003](../rfc/RFC-0003-auto-submit.md).
 > Tech: React (hook) + framer-motion (prompt); no new deps.
 
 ## Goal

@@ -100,6 +100,9 @@ const en = {
     livesLabel: (lives: number) => `${lives} lives remaining`,
     waiting: '✋ Waiting for your hand…',
     showing: (detected: number) => `You're showing ${detected}`,
+    autoPrompt: (n: number) => `Submitting ${n}…`,
+    autoPromptCancel: 'Change your hand to cancel',
+    autoPromptAria: (n: number) => `Submitting ${n}. Change your hand to cancel.`,
     correct: (expected: number) => `✅ Correct! It's ${expected}`,
     wrong: (given: number, expected: number) =>
       `❌ Oops, you showed ${given}. It's ${expected}`,
@@ -108,7 +111,7 @@ const en = {
     padAria: 'Type your answer',
     padSubmit: 'Submit',
     padHelper:
-      'With the camera, hold the right finger value in view for ~½ second to auto-answer. Left hand = tens, right hand = ones (e.g. 3 on the left + 7 on the right = 37).',
+      'With the camera, hold a finger value steady and a ring counts down to submit it (change your hand to cancel). Left hand = tens, right hand = ones (e.g. 3 on the left + 7 on the right = 37).',
     modalWon: '🎉 You won!',
     modalLost: '💀 Game over',
     youScored: 'You scored',

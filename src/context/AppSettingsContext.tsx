@@ -13,6 +13,20 @@ function toCameraScale(value: unknown): CameraScale {
   return CAMERA_SIZES.includes(value as CameraScale) ? (value as CameraScale) : 'md'
 }
 
+/** AutoSubmit timing bounds (Phase 8.2) — keep timings sane + testable. */
+const MS_MIN = 200
+const MS_MAX = 5000
+
+function toAutoSubmitEnabled(value: unknown): boolean {
+  return typeof value === 'boolean' ? value : true
+}
+
+/** Clamp a millisecond tuning value into [MS_MIN, MS_MAX]; fall back if invalid. */
+function clampMs(value: unknown, fallback: number): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : fallback
+  return Math.min(MS_MAX, Math.max(MS_MIN, Math.round(n)))
+}
+
 interface AppSettings {
   cameraPermission: CameraPermission
   volume: number // 0..1
@@ -21,6 +35,9 @@ interface AppSettings {
   onboardingDismissed: boolean // first-visit "how it works" banner
   locale: Locale // active UI language
   cameraScale: CameraScale // preview size (sm/md/lg) — Phase 8.1
+  autoSubmitEnabled: boolean // gesture auto-submit on/off (Phase 8.2)
+  autoSubmitPromptMs: number // T1: hold before the prompt appears
+  autoSubmitConfirmMs: number // T2: hold after the prompt before commit
   setCameraPermission: (p: CameraPermission) => void
   setVolume: (v: number) => void
   toggleMuted: () => void
@@ -28,6 +45,9 @@ interface AppSettings {
   dismissOnboarding: () => void
   setLocale: (locale: Locale) => void
   setCameraScale: (s: CameraScale) => void
+  setAutoSubmitEnabled: (b: boolean) => void
+  setAutoSubmitPromptMs: (ms: number) => void
+  setAutoSubmitConfirmMs: (ms: number) => void
 }
 
 const STORAGE_KEY = 'smartmath.settings'
@@ -39,6 +59,9 @@ interface PersistedSettings {
   onboardingDismissed: boolean
   locale: Locale
   cameraScale: CameraScale
+  autoSubmitEnabled: boolean
+  autoSubmitPromptMs: number
+  autoSubmitConfirmMs: number
 }
 
 const AppSettingsContext = createContext<AppSettings | null>(null)
@@ -51,6 +74,9 @@ function loadPersisted(): PersistedSettings {
     onboardingDismissed: false,
     locale: 'en',
     cameraScale: 'md',
+    autoSubmitEnabled: true,
+    autoSubmitPromptMs: 1500,
+    autoSubmitConfirmMs: 1000,
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -61,6 +87,9 @@ function loadPersisted(): PersistedSettings {
       ...parsed,
       locale: toLocale(parsed.locale),
       cameraScale: toCameraScale(parsed.cameraScale),
+      autoSubmitEnabled: toAutoSubmitEnabled(parsed.autoSubmitEnabled),
+      autoSubmitPromptMs: clampMs(parsed.autoSubmitPromptMs, 1500),
+      autoSubmitConfirmMs: clampMs(parsed.autoSubmitConfirmMs, 1000),
     }
   } catch {
     return fallback
@@ -71,7 +100,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [persisted, setPersisted] = useState<PersistedSettings>(loadPersisted)
   const [cameraPermission, setCameraPermission] = useState<CameraPermission>('prompt')
 
-  // Persist the audio/mirror/onboarding/locale/camera-scale prefs whenever they change.
+  // Persist the audio/mirror/onboarding/locale/camera/auto-submit prefs on change.
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
@@ -104,6 +133,18 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPersisted((prev) => ({ ...prev, cameraScale: scale }))
   }, [])
 
+  const setAutoSubmitEnabled = useCallback((b: boolean) => {
+    setPersisted((prev) => ({ ...prev, autoSubmitEnabled: b }))
+  }, [])
+
+  const setAutoSubmitPromptMs = useCallback((ms: number) => {
+    setPersisted((prev) => ({ ...prev, autoSubmitPromptMs: clampMs(ms, 1500) }))
+  }, [])
+
+  const setAutoSubmitConfirmMs = useCallback((ms: number) => {
+    setPersisted((prev) => ({ ...prev, autoSubmitConfirmMs: clampMs(ms, 1000) }))
+  }, [])
+
   const value = useMemo<AppSettings>(
     () => ({
       cameraPermission,
@@ -113,6 +154,9 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       onboardingDismissed: persisted.onboardingDismissed,
       locale: persisted.locale,
       cameraScale: persisted.cameraScale,
+      autoSubmitEnabled: persisted.autoSubmitEnabled,
+      autoSubmitPromptMs: persisted.autoSubmitPromptMs,
+      autoSubmitConfirmMs: persisted.autoSubmitConfirmMs,
       setCameraPermission,
       setVolume,
       toggleMuted,
@@ -120,8 +164,23 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       dismissOnboarding,
       setLocale,
       setCameraScale,
+      setAutoSubmitEnabled,
+      setAutoSubmitPromptMs,
+      setAutoSubmitConfirmMs,
     }),
-    [cameraPermission, persisted, setVolume, toggleMuted, toggleMirrored, dismissOnboarding, setLocale, setCameraScale],
+    [
+      cameraPermission,
+      persisted,
+      setVolume,
+      toggleMuted,
+      toggleMirrored,
+      dismissOnboarding,
+      setLocale,
+      setCameraScale,
+      setAutoSubmitEnabled,
+      setAutoSubmitPromptMs,
+      setAutoSubmitConfirmMs,
+    ],
   )
 
   return <AppSettingsContext.Provider value={value}>{children}</AppSettingsContext.Provider>

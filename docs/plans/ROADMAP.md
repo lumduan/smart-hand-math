@@ -225,12 +225,12 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ### 8.2 Auto-submit (gesture-held answer commit)
 
-- [ ] RFC-0003 — behavioral change to the submit flow (replace vs coexist)
-- [ ] `useAutoSubmit` two-stage timer (T1 prompt, T2 commit), time-driven loop
-- [ ] Inline prompt UI + progress ring (`aria-live`); framer-motion
-- [ ] Settings: `autoSubmitEnabled` / `autoSubmitPromptMs` / `autoSubmitConfirmMs`
-- [ ] `?tune` panel for experimentation → record chosen defaults in ADR-0008
-- [ ] Plan: [docs/plans/auto-submit/README.md](./auto-submit/README.md)
+- [x] RFC-0003 — behavioral change to the submit flow (replace vs coexist)
+- [x] `useAutoSubmit` two-stage timer (T1 prompt, T2 commit), time-driven loop
+- [x] Inline prompt UI + progress ring (`aria-live`); framer-motion
+- [x] Settings: `autoSubmitEnabled` / `autoSubmitPromptMs` / `autoSubmitConfirmMs`
+- [x] `?tune` panel for experimentation → record chosen defaults in ADR-0008
+- [x] Plan: [docs/plans/auto-submit/README.md](./auto-submit/README.md)
 
 **Exit criteria:** a held gesture visibly prompts then commits; cancel on change / no-hand; timing tunable; the 500ms-fast-commit decision resolved and documented.
 
@@ -313,6 +313,6 @@ Phase 0 (Bootstrap)
   - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
   - Phase 7 (Distribution & Release) — hardened non-root nginx (gzip/cache/security headers + healthcheck); tag-driven GHCR `release.yml`; v1.0.0 + CHANGELOG/RELEASING/dependabot; README refresh. Published v1.0.0.
 - **In progress:**
-  - Phase 8 docs — roadmap framework + feature plans: [camera-display-size](./camera-display-size/README.md), [auto-submit](./auto-submit/README.md) (+ [RFC-0003](./rfc/RFC-0003-auto-submit.md)); Lessons (8.3) framework only
-- **MVP (Phases 0–7) complete.** Phase 8 enhancements now being scheduled — 8.1 / 8.2 next, 8.3 Lessons deferred to a later RFC.
+  - Phase 8.1 (camera display size) & 8.2 (auto-submit) implemented — [camera-display-size](./camera-display-size/README.md), [auto-submit](./auto-submit/README.md) + [RFC-0003](./rfc/RFC-0003-auto-submit.md); AutoSubmit timing tuning → ADR-0008 pending. Lessons (8.3) framework only.
+- **MVP (Phases 0–7) complete.** Phase 8.1 + 8.2 implemented; 8.3 Lessons deferred to a later RFC.
 - **Blocked by:** nothing
