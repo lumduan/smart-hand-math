@@ -16,6 +16,9 @@
 // (`resolveStep` in src/utils/lessonsContent.ts). Typed as Record (not `as
 // const`) on purpose, so arbitrary id lookups typecheck. Thai pass = data-only.
 const lessonTitles: Record<string, string> = {
+  'how-many': 'How many?',
+  'more-or-fewer': 'More or fewer?',
+  'zero-means-none': 'Zero means none',
   'counting-fingers': 'Your counting fingers',
   'magic-thumb': 'The magic thumb',
   'five-and-more': 'Five and more',
@@ -29,6 +32,9 @@ const lessonTitles: Record<string, string> = {
 }
 
 const lessonObjectives: Record<string, string> = {
+  'how-many': 'Count things and say how many there are.',
+  'more-or-fewer': 'Compare two groups — which one has more?',
+  'zero-means-none': 'Zero means none — an empty hand is 0.',
   'counting-fingers': 'Learn to show 1, 2, 3 and 4 with your fingers.',
   'magic-thumb': 'Discover that the thumb means five.',
   'five-and-more': 'Make 6, 7, 8 and 9 — five and a few more fingers.',
@@ -44,6 +50,23 @@ const lessonObjectives: Record<string, string> = {
 // Per-step narration. `watch` steps need an entry; other kinds fall back to a
 // kind-based prompt (showMePrompt / solvePrompt / …) in `resolveStep`.
 const lessonSteps: Record<string, string> = {
+  // Unit 1 — number sense (count / compare / zero).
+  'hm-watch-1': "Let's count! Point to each one and say a number: one, two, three.",
+  'hm-count-3': 'Tap each apple to count it, then pick how many. One, two, three!',
+  'hm-count-5': 'Now the stars. Tap each one and count. How many are there?',
+  'hm-show-3': 'Now show three with your fingers!',
+  'hm-watch-2': 'The last number you say is how many there are. Great counting!',
+  'mf-watch-1': 'Which group has more? The one with more things is bigger!',
+  'mf-compare-1': 'Which side has more? Tap the bigger group!',
+  'mf-compare-2': 'Compare again — tap the group that has more.',
+  'mf-choose-1': 'Which is more, two or four? Tap it!',
+  'mf-watch-2': 'More is a bigger number. Fewer is less. Same means they are equal!',
+  'zm-watch-1': 'Zero means none — nothing at all. A closed fist shows zero!',
+  'zm-count-0': 'How many cookies are here? There are none. That is zero!',
+  'zm-show-0': 'Show me zero — make a fist!',
+  'zm-choose-0': 'The plate is empty. How many? Tap zero!',
+
+  // Unit 2 — Soroban digits.
   'cf-watch-1': 'Each finger is ONE! Pointer up is one. Add the middle finger for two.',
   'cf-watch-2': 'One, two, three, four — four fingers. Great counting!',
   'mt-watch-1':
@@ -236,7 +259,11 @@ const en = {
     showMePrompt: (n: number) => `Show me ${n}!`,
     countPrompt: 'Tap each one, then pick how many',
     choosePrompt: 'Tap the answer',
-    comparePrompt: 'Which has more?',
+    comparePrompt: 'Which group has more? Tap it!',
+    same: '🟰 Same',
+    countObjectAria: 'Tap to count',
+    compareLeftAria: 'Tap the left group',
+    compareRightAria: 'Tap the right group',
     solvePrompt: 'Show the answer with your fingers',
     tryAgain: 'Try again!',
     assessmentTitle: 'Quick check',
@@ -263,6 +290,9 @@ const en = {
   common: {
     close: 'Close',
     closeAria: 'Close modal',
+    errorTitle: 'Oops! Something broke',
+    errorBody: "Let's start fresh — tap the button to reload the page.",
+    errorReload: '🔄 Start over',
   },
 } as const
 

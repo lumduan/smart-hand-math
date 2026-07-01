@@ -92,12 +92,17 @@ export type LessonStep =
   | CompareStep
   | SolveStep
 
+/** The step kinds an assessment generator can produce (built by `buildAssessmentStep`). */
+export type AssessmentStep = ShowMeStep | SolveStep | CountStep | CompareStep
+
 /** How a lesson's quick-check questions are generated. */
 export type AssessmentGenerator =
   | { kind: 'showMe'; minAnswer?: number; maxAnswer: number; numHands?: 1 | 2 }
   | { kind: 'addition'; maxAnswer: number }
   | { kind: 'subtraction'; maxAnswer: number }
   | { kind: 'mixed'; ops: readonly ('+' | '-')[]; maxAnswer: number }
+  | { kind: 'count'; minCount?: number; maxCount: number }
+  | { kind: 'compare'; minCount?: number; maxCount: number }
 
 export interface Assessment {
   /** Number of assessment questions. */
@@ -123,16 +128,83 @@ export interface Lesson {
  * The ordered beginner track ("First Numbers", ages 5–6). `CURRICULUM[0]` is
  * always unlocked; `CURRICULUM[i+1]` unlocks when `CURRICULUM[i]` is complete.
  *
- * Phase A ships two playable lessons so sequential unlock is demonstrable:
- *  - `counting-fingers` (Unit 2, lesson 1): full — digits 1–4 via showMe.
- *  - `magic-thumb` (Unit 2, lesson 2): a Phase-A *subset* (watch + showMe 5);
- *    its count/choose steps and the remaining 11 lessons arrive in Phase C.
+ * Four units, 13 lessons: Unit 1 number-sense (count/compare, no camera) →
+ * Unit 2 Soroban digits 0–9 → Unit 3 addition → Unit 4 subtraction. Every
+ * answer is showable on one hand (RFC-0004). Ordering here is the unlock order.
  */
 export const CURRICULUM: readonly Lesson[] = [
+  // --- Unit 1: Number sense (counting, comparison, zero) — tap-based, no camera ---
+  {
+    id: 'how-many',
+    unit: 'number-sense',
+    order: 1,
+    targetNumbers: [1, 2, 3, 4, 5],
+    steps: [
+      { id: 'hm-watch-1', kind: 'watch', visual: '1  2  3   🍎🍎🍎' },
+      { id: 'hm-count-3', kind: 'count', object: '🍎', count: 3 },
+      { id: 'hm-count-5', kind: 'count', object: '⭐', count: 5 },
+      { id: 'hm-show-3', kind: 'showMe', target: 3, numHands: 1 },
+      { id: 'hm-watch-2', kind: 'watch', visual: '1  2  3  4  5   👏' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'count', minCount: 1, maxCount: 5 },
+    },
+  },
+  {
+    id: 'more-or-fewer',
+    unit: 'number-sense',
+    order: 2,
+    targetNumbers: [1, 2, 3, 4, 5],
+    steps: [
+      { id: 'mf-watch-1', kind: 'watch', visual: '🍎🍎🍎🍎   vs   🍎🍎' },
+      {
+        id: 'mf-compare-1',
+        kind: 'compare',
+        left: { object: '🍎', count: 4 },
+        right: { object: '🍎', count: 2 },
+        answer: 'more',
+      },
+      {
+        id: 'mf-compare-2',
+        kind: 'compare',
+        left: { object: '🐶', count: 1 },
+        right: { object: '🐶', count: 3 },
+        answer: 'fewer',
+      },
+      { id: 'mf-choose-1', kind: 'choose', display: '2   or   4', options: [2, 4], answer: 4 },
+      { id: 'mf-watch-2', kind: 'watch', visual: 'more  ·  fewer  ·  same' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'compare', minCount: 1, maxCount: 5 },
+    },
+  },
+  {
+    id: 'zero-means-none',
+    unit: 'number-sense',
+    order: 3,
+    targetNumbers: [0, 1],
+    steps: [
+      { id: 'zm-watch-1', kind: 'watch', visual: '✊ = 0   (none!)' },
+      { id: 'zm-count-0', kind: 'count', object: '🍪', count: 0 },
+      { id: 'zm-show-0', kind: 'showMe', target: 0, numHands: 1 },
+      { id: 'zm-choose-0', kind: 'choose', display: '🍽️', options: [0, 1], answer: 0 },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'count', minCount: 0, maxCount: 1 },
+    },
+  },
+
+  // --- Unit 2: Finger numbers (Soroban 0–9) -----------------------------------
   {
     id: 'counting-fingers',
     unit: 'soroban-0-9',
-    order: 1,
+    order: 4,
     targetNumbers: [1, 2, 3, 4],
     steps: [
       { id: 'cf-watch-1', kind: 'watch', visual: '☝️ = 1     ✌️ = 2' },
@@ -151,7 +223,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'magic-thumb',
     unit: 'soroban-0-9',
-    order: 2,
+    order: 5,
     targetNumbers: [5],
     steps: [
       { id: 'mt-watch-1', kind: 'watch', visual: '👍 = 5' },
@@ -170,7 +242,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'five-and-more',
     unit: 'soroban-0-9',
-    order: 3,
+    order: 6,
     targetNumbers: [6, 7, 8, 9],
     steps: [
       { id: 'fm-watch-1', kind: 'watch', visual: '🖐️ + ☝️ = 6' },
@@ -189,7 +261,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'all-the-numbers',
     unit: 'soroban-0-9',
-    order: 4,
+    order: 7,
     targetNumbers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     steps: [
       { id: 'an-show-0', kind: 'showMe', target: 0, numHands: 1 },
@@ -210,7 +282,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'adding-is-more',
     unit: 'addition',
-    order: 5,
+    order: 8,
     targetNumbers: [2, 3, 4],
     steps: [
       { id: 'am-watch-1', kind: 'watch', visual: '1 + 1 = 2' },
@@ -228,7 +300,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'part-and-whole',
     unit: 'addition',
-    order: 6,
+    order: 9,
     targetNumbers: [5],
     steps: [
       { id: 'pw-watch-1', kind: 'watch', visual: '2 + 3 = 5' },
@@ -246,7 +318,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'bigger-adds',
     unit: 'addition',
-    order: 7,
+    order: 10,
     targetNumbers: [6, 7, 8, 9],
     steps: [
       { id: 'ba-watch-1', kind: 'watch', visual: '5 + 2 = 7' },
@@ -266,7 +338,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'taking-away',
     unit: 'subtraction',
-    order: 8,
+    order: 11,
     targetNumbers: [2, 3],
     steps: [
       { id: 'ta-watch-1', kind: 'watch', visual: '3 − 1 = 2' },
@@ -284,7 +356,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'how-many-left',
     unit: 'subtraction',
-    order: 9,
+    order: 12,
     targetNumbers: [0, 2, 4],
     steps: [
       { id: 'hl-watch-1', kind: 'watch', visual: '5 − 1 = 4' },
@@ -302,7 +374,7 @@ export const CURRICULUM: readonly Lesson[] = [
   {
     id: 'bigger-take-aways',
     unit: 'subtraction',
-    order: 10,
+    order: 13,
     targetNumbers: [0, 2, 5, 7],
     steps: [
       { id: 'bt-watch-1', kind: 'watch', visual: '9 − 4 = 5' },

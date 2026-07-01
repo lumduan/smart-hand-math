@@ -9,6 +9,7 @@ import '@fontsource/baloo-2/600.css'
 import '@fontsource/baloo-2/700.css'
 import '@fontsource/baloo-2/800.css'
 import App from './App'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { AppSettingsProvider } from '@/context/AppSettingsContext'
 import { GameProvider } from '@/context/GameContext'
 import { LessonsProvider } from '@/context/LessonsContext'
@@ -17,16 +18,19 @@ import './index.css'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <AppSettingsProvider>
-        <GameProvider>
-          <LessonsProvider>
-            {/* Respect the user's prefers-reduced-motion setting for all motion. */}
-            <MotionConfig reducedMotion="user">
-              <App />
-            </MotionConfig>
-          </LessonsProvider>
-        </GameProvider>
-      </AppSettingsProvider>
+      {/* Catch any render throw and show a recoverable card instead of a blank page. */}
+      <ErrorBoundary>
+        <AppSettingsProvider>
+          <GameProvider>
+            <LessonsProvider>
+              {/* Respect the user's prefers-reduced-motion setting for all motion. */}
+              <MotionConfig reducedMotion="user">
+                <App />
+              </MotionConfig>
+            </LessonsProvider>
+          </GameProvider>
+        </AppSettingsProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   </StrictMode>,
 )

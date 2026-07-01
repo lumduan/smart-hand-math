@@ -7,7 +7,8 @@ import {
   useReducer,
   type ReactNode,
 } from 'react'
-import { CURRICULUM, LESSON_MAP } from '@/content/lessons'
+import { CURRICULUM, LESSON_MAP, type AssessmentStep } from '@/content/lessons'
+import { buildAssessment } from '@/utils/lessonsContent'
 
 /**
  * Lessons session + progress state (Phase 8.3). Mirrors `GameContext`'s shape
@@ -40,6 +41,8 @@ export interface ActiveLesson {
   assessmentScore: number
   /** Teaching-step retries across this session (feeds star rating). */
   attempts: number
+  /** Generated quick-check items — empty while teaching, filled on entering `assess`. */
+  assessment: AssessmentStep[]
 }
 
 export interface LessonsState {
@@ -85,6 +88,7 @@ export function reducer(state: LessonsState, action: LessonsAction): LessonsStat
           assessmentIndex: 0,
           assessmentScore: 0,
           attempts: 0,
+          assessment: [],
         },
       }
 
@@ -93,7 +97,16 @@ export function reducer(state: LessonsState, action: LessonsAction): LessonsStat
       const lesson = LESSON_MAP[state.active.lessonId]
       const next = state.active.stepIndex + 1
       if (next >= lesson.steps.length) {
-        return { ...state, active: { ...state.active, phase: 'assess', assessmentIndex: 0, assessmentScore: 0 } }
+        return {
+          ...state,
+          active: {
+            ...state.active,
+            phase: 'assess',
+            assessmentIndex: 0,
+            assessmentScore: 0,
+            assessment: buildAssessment(lesson),
+          },
+        }
       }
       return { ...state, active: { ...state.active, stepIndex: next } }
     }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useHandTracker } from '@/hooks/useHandTracker'
 import { useAudio } from '@/hooks/useAudio'
 import { useAppSettings } from '@/context/AppSettingsContext'
@@ -45,7 +45,7 @@ interface CameraViewProps {
  * `onNumberChange`.
  */
 export function CameraView({ onNumberChange, numHands = 2, digitMode = false, className = '' }: CameraViewProps) {
-  const { mirrored, setCameraPermission, cameraScale } = useAppSettings()
+  const { mirrored, setCameraPermission, cameraScale, cameraAutoStart, setCameraAutoStart } = useAppSettings()
   const audio = useAudio()
   const t = useStrings()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -122,11 +122,25 @@ export function CameraView({ onNumberChange, numHands = 2, digitMode = false, cl
     numHands,
   })
 
-  // Reflect tracker status into the global camera-permission state.
+  // Reflect tracker status into permission state, and remember a successful grant so
+  // later camera views auto-start.
   useEffect(() => {
-    if (status === 'ready') setCameraPermission('granted')
-    else if (status === 'error') setCameraPermission('denied')
-  }, [status, setCameraPermission])
+    if (status === 'ready') {
+      setCameraPermission('granted')
+      setCameraAutoStart(true)
+    } else if (status === 'error') {
+      setCameraPermission('denied')
+    }
+  }, [status, setCameraPermission, setCameraAutoStart])
+
+  // Desired camera state: default "on" when the camera was granted before, so it
+  // auto-plays without a ▶️ tap. A manual ⏹️ sets this false; the effect only starts
+  // from `idle` and skips while there's an error, so it never restarts what the user
+  // stopped nor retry-loops after a failure (▶️ clears the error and retries).
+  const [wantLive, setWantLive] = useState(cameraAutoStart)
+  useEffect(() => {
+    if (wantLive && status === 'idle' && !error) void start()
+  }, [wantLive, status, error, start])
 
   const isLive = status === 'ready' || status === 'loading'
 
@@ -158,6 +172,7 @@ export function CameraView({ onNumberChange, numHands = 2, digitMode = false, cl
               className="btn btn-primary btn-circle shadow-lg"
               onClick={() => {
                 audio.playClick()
+                setWantLive(true)
                 void start()
               }}
               aria-label={t.camera.startAria}
@@ -169,6 +184,7 @@ export function CameraView({ onNumberChange, numHands = 2, digitMode = false, cl
               className="btn btn-ghost btn-circle bg-black/40 text-white shadow-lg"
               onClick={() => {
                 audio.playClick()
+                setWantLive(false)
                 stop()
               }}
               aria-label={t.camera.stopAria}

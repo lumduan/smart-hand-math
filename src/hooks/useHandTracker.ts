@@ -46,6 +46,31 @@ async function createLandmarker(numHands: number, delegate: 'GPU' | 'CPU'): Prom
   }
 }
 
+// Cache one HandLandmarker per `numHands` for the whole session. MediaPipe's
+// WASM/GPU init is expensive and — critically — repeatedly creating and
+// `.close()`-ing landmarkers (which happens when the lessons camera mounts and
+// unmounts between steps) can wedge the runtime, showing a blank feed until a
+// full page reload. Creating each landmarker once and reusing it across mounts
+// avoids that. At most two instances ever exist (numHands 1 and 2).
+const landmarkerCache = new Map<number, HandLandmarker>()
+const landmarkerLoading = new Map<number, Promise<HandLandmarker>>()
+
+function acquireLandmarker(numHands: number, delegate: 'GPU' | 'CPU'): Promise<HandLandmarker> {
+  const cached = landmarkerCache.get(numHands)
+  if (cached) return Promise.resolve(cached)
+  let loading = landmarkerLoading.get(numHands)
+  if (!loading) {
+    loading = createLandmarker(numHands, delegate)
+      .then((lm) => {
+        landmarkerCache.set(numHands, lm)
+        return lm
+      })
+      .finally(() => landmarkerLoading.delete(numHands))
+    landmarkerLoading.set(numHands, loading)
+  }
+  return loading
+}
+
 /**
  * Core hand-tracking hook. Owns the camera stream + MediaPipe HandLandmarker
  * lifecycle and runs a requestAnimationFrame detection loop, reporting
@@ -65,6 +90,8 @@ export function useHandTracker({
   const rafRef = useRef<number>(0)
   const lastVideoTimeRef = useRef<number>(-1)
   const lastTsRef = useRef<number>(-1)
+  const unmountedRef = useRef(false)
+  const startingRef = useRef(false)
 
   // Keep the latest callback without restarting the rAF loop.
   const onLandmarksRef = useRef(onLandmarks)
@@ -83,7 +110,7 @@ export function useHandTracker({
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
-    landmarkerRef.current?.close()
+    // Detach only — the landmarker is a cached singleton reused across mounts.
     landmarkerRef.current = null
 
     lastVideoTimeRef.current = -1
@@ -92,7 +119,11 @@ export function useHandTracker({
   }, [videoRef])
 
   const start = useCallback(async () => {
-    if (status === 'loading' || status === 'ready') return
+    // startingRef is a synchronous guard: auto-start fires start() programmatically
+    // and StrictMode double-invokes the effect, so two calls can race past a
+    // `status`-based check before the 'loading' state commits.
+    if (startingRef.current || status === 'ready') return
+    startingRef.current = true
     setStatus('loading')
     setError(null)
     try {
@@ -100,6 +131,13 @@ export function useHandTracker({
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
         audio: false,
       })
+      // If we unmounted while getUserMedia was resolving, release the camera and
+      // bail — otherwise the stream leaks and the device stays busy (blank feed
+      // until a reload) because the unmount cleanup already ran.
+      if (unmountedRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
       streamRef.current = stream
 
       const video = videoRef.current
@@ -109,7 +147,9 @@ export function useHandTracker({
         /* autoplay can reject if not user-gesture initiated; ignore */
       })
 
-      landmarkerRef.current = await createLandmarker(numHands, delegate)
+      const landmarker = await acquireLandmarker(numHands, delegate)
+      if (unmountedRef.current) return
+      landmarkerRef.current = landmarker
 
       const loop = () => {
         const lm = landmarkerRef.current
@@ -148,15 +188,21 @@ export function useHandTracker({
       setError(message)
       setStatus('error')
       stop()
+    } finally {
+      startingRef.current = false
     }
   }, [status, videoRef, numHands, delegate, stop])
 
-  // Cleanup on unmount.
+  // Stop the camera + loop on unmount, but keep the cached landmarker alive (it is
+  // reused across mounts). Reset `unmountedRef` on (re)mount so React StrictMode's
+  // dev mount→unmount→remount cycle doesn't leave it stuck `true` — which would make
+  // start() bail after getUserMedia and hang on "loading".
   useEffect(() => {
+    unmountedRef.current = false
     return () => {
+      unmountedRef.current = true
       cancelAnimationFrame(rafRef.current)
       streamRef.current?.getTracks().forEach((track) => track.stop())
-      landmarkerRef.current?.close()
     }
   }, [])
 

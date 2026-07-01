@@ -4,13 +4,23 @@
  * gate). Lesson prose is looked up from the i18n `lessons` block; assessment
  * items are generated on the fly from each lesson's `assessment.generator`.
  */
-import type { Lesson, LessonStep, ShowMeStep, SolveStep } from '@/content/lessons'
+import type { AssessmentStep, Lesson, LessonStep } from '@/content/lessons'
 import type { Strings } from '@/i18n/strings'
 import { generateAddition, generateSubtraction } from '@/utils/mathGenerator'
 
 /** Inclusive random integer in [min, max]; caller guarantees min <= max. */
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
+/** Emoji pool for generated `count` / `compare` assessment items. */
+const COUNT_OBJECTS = ['🍎', '🐶', '⭐', '🎈', '🍌'] as const
+
+/** The relation of `left` to `right` — drives a `compare` step's answer. */
+export function compareAnswer(left: number, right: number): 'more' | 'fewer' | 'equal' {
+  if (left > right) return 'more'
+  if (left < right) return 'fewer'
+  return 'equal'
 }
 
 /**
@@ -31,12 +41,11 @@ export function resolveStep(step: LessonStep, lessons: Strings['lessons']): stri
 
 /**
  * Build the `index`-th assessment step for a lesson from its generator.
- * `showMe` produces a digit-recall step; `addition`/`subtraction`/`mixed`
- * produce a `solve` step (an `a ± b = ?` expression) whose single-hand answer
- * (0–9) the child shows with fingers. Answers are always ≤ `maxAnswer` ≤ 9, so
- * every generated item is showable on one hand (RFC-0004 single-hand cap).
+ * `showMe` → digit-recall; `addition`/`subtraction`/`mixed` → a `solve`
+ * expression; `count` → count objects; `compare` → compare two groups. Every
+ * answer is showable/tappable within the single-hand 0–9 cap (RFC-0004).
  */
-export function buildAssessmentStep(lesson: Lesson, index: number): ShowMeStep | SolveStep {
+export function buildAssessmentStep(lesson: Lesson, index: number): AssessmentStep {
   const gen = lesson.assessment.generator
   const id = `${lesson.id}-assess-${index}`
   switch (gen.kind) {
@@ -58,7 +67,59 @@ export function buildAssessmentStep(lesson: Lesson, index: number): ShowMeStep |
       const q = op === '+' ? generateAddition(gen.maxAnswer) : generateSubtraction(gen.maxAnswer)
       return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
     }
+    case 'count': {
+      const min = Math.min(gen.minCount ?? 0, gen.maxCount)
+      const object = COUNT_OBJECTS[randInt(0, COUNT_OBJECTS.length - 1)]
+      return { id, kind: 'count', object, count: randInt(min, gen.maxCount) }
+    }
+    case 'compare': {
+      const min = Math.min(gen.minCount ?? 0, gen.maxCount)
+      const object = COUNT_OBJECTS[randInt(0, COUNT_OBJECTS.length - 1)]
+      const left = randInt(min, gen.maxCount)
+      const right = randInt(min, gen.maxCount)
+      return {
+        id,
+        kind: 'compare',
+        left: { object, count: left },
+        right: { object, count: right },
+        answer: compareAnswer(left, right),
+      }
+    }
   }
+}
+
+/** Signature of an assessment item's *question* — used to avoid consecutive repeats. */
+function stepSignature(step: AssessmentStep): string {
+  switch (step.kind) {
+    case 'showMe':
+      return `s${step.target}`
+    case 'solve':
+      return `v${step.display}`
+    case 'count':
+      return `c${step.object}${step.count}`
+    case 'compare':
+      return `p${step.left.count}-${step.right.count}`
+  }
+}
+
+/**
+ * Build a lesson's whole assessment sequence up front, re-rolling each item so it
+ * isn't identical to the one before it (a single-value range can't avoid it —
+ * give up after a few tries). Called once per assessment entry, so a retry gets
+ * a fresh, non-repeating set.
+ */
+export function buildAssessment(lesson: Lesson): AssessmentStep[] {
+  const out: AssessmentStep[] = []
+  let prevSig: string | null = null
+  for (let i = 0; i < lesson.assessment.questions; i++) {
+    let step = buildAssessmentStep(lesson, i)
+    for (let tries = 0; tries < 8 && stepSignature(step) === prevSig; tries++) {
+      step = buildAssessmentStep(lesson, i)
+    }
+    prevSig = stepSignature(step)
+    out.push(step)
+  }
+  return out
 }
 
 /** Whether an assessment score meets the lesson's pass threshold. */

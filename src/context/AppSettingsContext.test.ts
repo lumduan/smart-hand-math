@@ -21,6 +21,7 @@ describe('useAppSettings defaults', () => {
     expect(result.current.locale).toBe('en')
     expect(result.current.onboardingDismissed).toBe(false)
     expect(result.current.cameraScale).toBe('md')
+    expect(result.current.cameraAutoStart).toBe(false)
   })
 })
 
@@ -133,6 +134,27 @@ describe('cameraScale', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ cameraScale: 'huge' }))
     const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
     expect(result.current.cameraScale).toBe('md')
+  })
+})
+
+describe('cameraAutoStart', () => {
+  it('defaults to false and flips via setCameraAutoStart', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.cameraAutoStart).toBe(false)
+    act(() => result.current.setCameraAutoStart(true))
+    expect(result.current.cameraAutoStart).toBe(true)
+  })
+
+  it('persists cameraAutoStart to localStorage', () => {
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    act(() => result.current.setCameraAutoStart(true))
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toMatchObject({ cameraAutoStart: true })
+  })
+
+  it('hydrates a persisted cameraAutoStart', () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ cameraAutoStart: true }))
+    const { result } = renderHook(() => useAppSettings(), { wrapper: AppSettingsProvider })
+    expect(result.current.cameraAutoStart).toBe(true)
   })
 })
 

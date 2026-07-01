@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CameraView } from '@/components/camera/CameraView'
 import { Card } from '@/components/common/Card'
@@ -36,10 +36,9 @@ interface LessonStepProps {
 }
 
 /**
- * Dispatches on `step.kind`. `watch`, `showMe`, `solve` and `choose` are built;
- * `count`/`compare` (Unit 1) fall back to a prompt placeholder. Advancement is
- * the parent's job — this component only signals via callbacks. `showMe` and
- * `solve` share the same camera-answer view (a digit shown with fingers).
+ * Dispatches on `step.kind` — all six kinds are built. Advancement is the
+ * parent's job; this component only signals via callbacks. `showMe` and `solve`
+ * share one camera-answer view; `count`/`compare`/`choose` are tap-based.
  */
 export function LessonStep({ step, onComplete, onAttempt, onRetry, assessment = false }: LessonStepProps) {
   switch (step.kind) {
@@ -58,16 +57,20 @@ export function LessonStep({ step, onComplete, onAttempt, onRetry, assessment = 
       )
     case 'choose':
       return (
-        <ChooseView
-          step={step}
-          assessment={assessment}
-          onComplete={onComplete}
-          onAttempt={onAttempt}
-          onRetry={onRetry}
-        />
+        <ChooseView step={step} assessment={assessment} onComplete={onComplete} onAttempt={onAttempt} onRetry={onRetry} />
+      )
+    case 'count':
+      return (
+        <CountView step={step} assessment={assessment} onComplete={onComplete} onAttempt={onAttempt} onRetry={onRetry} />
+      )
+    case 'compare':
+      return (
+        <CompareView step={step} assessment={assessment} onComplete={onComplete} onAttempt={onAttempt} onRetry={onRetry} />
       )
     default:
-      return <PromptView step={step} onComplete={onComplete} />
+      // Unknown/unhandled kind — render nothing rather than returning undefined
+      // (which React treats as an error and would blank the whole page).
+      return null
   }
 }
 
@@ -384,26 +387,253 @@ function ChooseView({
   )
 }
 
-/** Placeholder for `count` / `compare` (Unit 1 tap views — deferred). */
-function PromptView({ step, onComplete }: { step: LessonStep; onComplete: () => void }) {
+/** Randomly order two options (Unit 1 uses 2 choices). */
+function shuffle2(a: number, b: number): number[] {
+  return Math.random() < 0.5 ? [a, b] : [b, a]
+}
+
+/** Count the objects (tap each → tick), then pick the total (Unit 1). */
+function CountView({
+  step,
+  assessment,
+  onComplete,
+  onAttempt,
+  onRetry,
+}: {
+  step: Extract<LessonStep, { kind: 'count' }>
+  assessment: boolean
+  onComplete: () => void
+  onAttempt?: (correct: boolean) => void
+  onRetry?: () => void
+}) {
   const t = useStrings()
   const audio = useAudio()
   const tts = useTts()
+  const { muted } = useAppSettings()
   const ttsRef = useRef(tts)
   ttsRef.current = tts
   const prompt = resolveStep(step, t.lessons)
+  const canReplay = tts.supported && !muted
+
+  const [tapped, setTapped] = useState<ReadonlySet<number>>(new Set())
+  const [picked, setPicked] = useState<number | null>(null)
+  const [locked, setLocked] = useState(false)
+  const doneRef = useRef(false)
+
+  // Two options: the true count + a near distractor.
+  const options = useMemo(() => shuffle2(step.count, step.count === 0 ? 1 : step.count - 1), [step.count])
 
   useEffect(() => {
+    doneRef.current = false
+    setLocked(false)
+    setPicked(null)
+    setTapped(new Set())
     ttsRef.current.speak(prompt)
     return () => ttsRef.current.cancel()
   }, [step.id, prompt])
 
+  const tap = (i: number) => {
+    audio.playTick()
+    setTapped((prev) => {
+      const next = new Set(prev)
+      if (next.has(i)) next.delete(i)
+      else next.add(i)
+      return next
+    })
+  }
+
+  const choose = (value: number) => {
+    if (doneRef.current) return
+    const correct = value === step.count
+    setPicked(value)
+    if (!assessment && !correct) {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+      onRetry?.()
+      window.setTimeout(() => setPicked(null), TRY_AGAIN_MS)
+      return
+    }
+    doneRef.current = true
+    setLocked(true)
+    if (correct) {
+      audio.play(assessment ? 'correct' : 'stepComplete')
+      burst()
+      ttsRef.current.speak(t.lessons.spokenGreat)
+    } else {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+    }
+    window.setTimeout(() => {
+      if (assessment) onAttempt?.(correct)
+      else onComplete()
+    }, correct ? CORRECT_PAUSE_MS : TRY_AGAIN_MS)
+  }
+
   return (
     <Card className="items-center text-center">
-      <p className="font-display text-lg">{prompt}</p>
-      <Button variant="primary" className="mt-3" onClick={() => { audio.playClick(); onComplete() }}>
-        {t.lessons.next}
+      <p className="font-display text-lg text-base-content/70">{prompt}</p>
+      {canReplay && (
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm rounded-full font-display"
+          onClick={() => ttsRef.current.speak(prompt)}
+        >
+          {t.lessons.replay}
+        </button>
+      )}
+      <div className="my-3 flex min-h-[3.5rem] flex-wrap items-center justify-center gap-2">
+        {step.count === 0 ? (
+          <span className="font-display text-2xl text-base-content/50">🚫</span>
+        ) : (
+          Array.from({ length: step.count }, (_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={t.lessons.countObjectAria}
+              className={`text-5xl transition-transform ${tapped.has(i) ? 'scale-110' : 'opacity-60'}`}
+              onClick={() => tap(i)}
+            >
+              {step.object}
+            </button>
+          ))
+        )}
+      </div>
+      <div className="flex flex-wrap justify-center gap-3">
+        {options.map((opt) => {
+          const isPicked = picked === opt
+          const variant = isPicked ? (opt === step.count ? 'success' : 'danger') : 'accent'
+          return (
+            <Button key={opt} variant={variant} size="lg" disabled={locked} onClick={() => choose(opt)}>
+              {opt}
+            </Button>
+          )
+        })}
+      </div>
+      {picked !== null && (
+        <div className={`badge badge-lg font-display mt-2 ${picked === step.count ? 'badge-success' : 'badge-error'}`}>
+          {picked === step.count ? '✅' : '❌'}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/** Compare two groups; tap the one with more (or "Same"). (Unit 1.) */
+function CompareView({
+  step,
+  assessment,
+  onComplete,
+  onAttempt,
+  onRetry,
+}: {
+  step: Extract<LessonStep, { kind: 'compare' }>
+  assessment: boolean
+  onComplete: () => void
+  onAttempt?: (correct: boolean) => void
+  onRetry?: () => void
+}) {
+  const t = useStrings()
+  const audio = useAudio()
+  const tts = useTts()
+  const { muted } = useAppSettings()
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
+  const prompt = resolveStep(step, t.lessons)
+  const canReplay = tts.supported && !muted
+
+  const [choice, setChoice] = useState<null | 'more' | 'fewer' | 'equal'>(null)
+  const [locked, setLocked] = useState(false)
+  const doneRef = useRef(false)
+
+  useEffect(() => {
+    doneRef.current = false
+    setLocked(false)
+    setChoice(null)
+    ttsRef.current.speak(prompt)
+    return () => ttsRef.current.cancel()
+  }, [step.id, prompt])
+
+  // Tapping picks a relation of LEFT vs right: left → 'more', right → 'fewer', Same → 'equal'.
+  const pick = (relation: 'more' | 'fewer' | 'equal') => {
+    if (doneRef.current) return
+    const correct = relation === step.answer
+    setChoice(relation)
+    if (!assessment && !correct) {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+      onRetry?.()
+      window.setTimeout(() => setChoice(null), TRY_AGAIN_MS)
+      return
+    }
+    doneRef.current = true
+    setLocked(true)
+    if (correct) {
+      audio.play(assessment ? 'correct' : 'stepComplete')
+      burst()
+      ttsRef.current.speak(t.lessons.spokenGreat)
+    } else {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+    }
+    window.setTimeout(() => {
+      if (assessment) onAttempt?.(correct)
+      else onComplete()
+    }, correct ? CORRECT_PAUSE_MS : TRY_AGAIN_MS)
+  }
+
+  const groupClass = (side: 'more' | 'fewer') =>
+    `flex flex-1 flex-wrap content-center justify-center gap-1 rounded-3xl border-4 p-3 text-4xl transition ${
+      choice === side ? (side === step.answer ? 'border-success' : 'border-error') : 'border-base-300'
+    }`
+
+  return (
+    <Card className="items-center text-center">
+      <p className="font-display text-lg text-base-content/70">{prompt}</p>
+      {canReplay && (
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm rounded-full font-display"
+          onClick={() => ttsRef.current.speak(prompt)}
+        >
+          {t.lessons.replay}
+        </button>
+      )}
+      <div className="my-3 flex w-full items-stretch gap-3">
+        <button
+          type="button"
+          aria-label={t.lessons.compareLeftAria}
+          disabled={locked}
+          className={groupClass('more')}
+          onClick={() => pick('more')}
+        >
+          {Array.from({ length: step.left.count }, (_, i) => (
+            <span key={i}>{step.left.object}</span>
+          ))}
+        </button>
+        <button
+          type="button"
+          aria-label={t.lessons.compareRightAria}
+          disabled={locked}
+          className={groupClass('fewer')}
+          onClick={() => pick('fewer')}
+        >
+          {Array.from({ length: step.right.count }, (_, i) => (
+            <span key={i}>{step.right.object}</span>
+          ))}
+        </button>
+      </div>
+      <Button
+        variant={choice === 'equal' ? (step.answer === 'equal' ? 'success' : 'danger') : 'ghost'}
+        disabled={locked}
+        onClick={() => pick('equal')}
+      >
+        {t.lessons.same}
       </Button>
+      {choice !== null && (
+        <div className={`badge badge-lg font-display mt-2 ${choice === step.answer ? 'badge-success' : 'badge-error'}`}>
+          {choice === step.answer ? '✅' : '❌'}
+        </div>
+      )}
     </Card>
   )
 }

@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { resolveStep, buildAssessmentStep, assessmentPassed, spokenExpression } from '@/utils/lessonsContent'
+import {
+  resolveStep,
+  buildAssessmentStep,
+  buildAssessment,
+  assessmentPassed,
+  compareAnswer,
+  spokenExpression,
+} from '@/utils/lessonsContent'
 import { STRINGS } from '@/i18n/strings'
-import { CURRICULUM, type Lesson, type LessonStep } from '@/content/lessons'
+import { CURRICULUM, LESSON_MAP, type Lesson, type LessonStep } from '@/content/lessons'
 
 const L = STRINGS.en.lessons
 
@@ -44,7 +51,7 @@ describe('resolveStep', () => {
 })
 
 describe('buildAssessmentStep', () => {
-  const lesson = CURRICULUM[0] // counting-fingers: showMe, min 1, max 4
+  const lesson = LESSON_MAP['counting-fingers'] // showMe, min 1, max 4 (not CURRICULUM[0] — that is now Unit 1)
 
   // Swap a generator onto lesson 2.1 to exercise each generator branch.
   const withGen = (generator: Lesson['assessment']['generator']): Lesson => ({
@@ -101,6 +108,89 @@ describe('buildAssessmentStep', () => {
     const minus = buildAssessmentStep(withGen({ kind: 'mixed', ops: ['-'], maxAnswer: 5 }), 0)
     if (minus.kind !== 'solve') throw new Error('expected solve')
     expect(minus.display).toMatch(/−/)
+  })
+
+  it('builds a count step from a count generator (count in range, object present)', () => {
+    const step = buildAssessmentStep(withGen({ kind: 'count', minCount: 1, maxCount: 5 }), 3)
+    expect(step.kind).toBe('count')
+    if (step.kind !== 'count') throw new Error('expected count')
+    expect(step.count).toBeGreaterThanOrEqual(1)
+    expect(step.count).toBeLessThanOrEqual(5)
+    expect(step.object.length).toBeGreaterThan(0)
+    expect(step.id).toBe(`${lesson.id}-assess-3`)
+  })
+
+  it('count generator can reach zero when minCount is 0', () => {
+    const step = buildAssessmentStep(withGen({ kind: 'count', minCount: 0, maxCount: 0 }), 0)
+    if (step.kind !== 'count') throw new Error('expected count')
+    expect(step.count).toBe(0)
+  })
+
+  it('builds a compare step with counts in range and a consistent answer', () => {
+    const step = buildAssessmentStep(withGen({ kind: 'compare', minCount: 1, maxCount: 5 }), 0)
+    expect(step.kind).toBe('compare')
+    if (step.kind !== 'compare') throw new Error('expected compare')
+    expect(step.left.count).toBeGreaterThanOrEqual(1)
+    expect(step.right.count).toBeLessThanOrEqual(5)
+    expect(step.answer).toBe(compareAnswer(step.left.count, step.right.count))
+    expect(step.left.object).toBe(step.right.object) // same object → fair comparison
+  })
+
+  it('count/compare default minCount to 0 when omitted', () => {
+    const c = buildAssessmentStep(withGen({ kind: 'count', maxCount: 3 }), 0)
+    if (c.kind !== 'count') throw new Error('expected count')
+    expect(c.count).toBeGreaterThanOrEqual(0)
+    const p = buildAssessmentStep(withGen({ kind: 'compare', maxCount: 3 }), 0)
+    if (p.kind !== 'compare') throw new Error('expected compare')
+    expect(p.left.count).toBeGreaterThanOrEqual(0)
+  })
+})
+
+describe('compareAnswer', () => {
+  it('classifies more / fewer / equal', () => {
+    expect(compareAnswer(4, 2)).toBe('more')
+    expect(compareAnswer(1, 3)).toBe('fewer')
+    expect(compareAnswer(2, 2)).toBe('equal')
+  })
+})
+
+describe('buildAssessment', () => {
+  const lesson = LESSON_MAP['counting-fingers']
+  const withGen = (generator: Lesson['assessment']['generator']): Lesson => ({
+    ...lesson,
+    assessment: { questions: 5, passThreshold: 4, generator },
+  })
+
+  it('returns exactly `questions` items', () => {
+    expect(buildAssessment(lesson)).toHaveLength(lesson.assessment.questions)
+  })
+
+  it('never repeats a question back-to-back when the range allows it', () => {
+    // Run many times: a 1..4 showMe range must never produce two identical adjacent targets.
+    for (let run = 0; run < 200; run++) {
+      const seq = buildAssessment(lesson)
+      for (let i = 1; i < seq.length; i++) {
+        const a = seq[i - 1]
+        const b = seq[i]
+        if (a.kind === 'showMe' && b.kind === 'showMe') expect(b.target).not.toBe(a.target)
+      }
+    }
+  })
+
+  it('exercises count/compare/solve signatures without adjacent repeats', () => {
+    expect(buildAssessment(withGen({ kind: 'count', minCount: 1, maxCount: 5 }))).toHaveLength(5)
+    expect(buildAssessment(withGen({ kind: 'compare', minCount: 1, maxCount: 5 }))).toHaveLength(5)
+    expect(buildAssessment(withGen({ kind: 'addition', maxAnswer: 9 }))).toHaveLength(5)
+  })
+
+  it('gracefully returns duplicates for a single-value range (give-up path)', () => {
+    // Only one possible value → adjacent repeats are unavoidable; must not hang.
+    const seq = buildAssessment(withGen({ kind: 'showMe', minAnswer: 5, maxAnswer: 5 }))
+    expect(seq).toHaveLength(5)
+    for (const s of seq) {
+      if (s.kind !== 'showMe') throw new Error('expected showMe')
+      expect(s.target).toBe(5)
+    }
   })
 })
 

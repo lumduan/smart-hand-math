@@ -12,8 +12,8 @@ import {
 } from '@/context/LessonsContext'
 import { CURRICULUM } from '@/content/lessons'
 
-const FIRST = CURRICULUM[0] // 'counting-fingers'
-const SECOND = CURRICULUM[1] // 'magic-thumb'
+const FIRST = CURRICULUM[0] // 'how-many' (Unit 1) — reducer tests treat it abstractly
+const SECOND = CURRICULUM[1] // 'more-or-fewer'
 
 function state(active: ActiveLesson | null) {
   return { progress: seedProgress(), active }
@@ -60,6 +60,7 @@ describe('reducer — START_LESSON', () => {
       assessmentIndex: 0,
       assessmentScore: 0,
       attempts: 0,
+      assessment: [],
     })
   })
 })
@@ -70,11 +71,12 @@ describe('reducer — STEP_COMPLETE', () => {
     expect(after.active?.stepIndex).toBe(2)
     expect(after.active?.phase).toBe('teach')
   })
-  it('transitions to assess after the last teaching step', () => {
+  it('transitions to assess after the last teaching step and generates the item sequence', () => {
     const after = reducer(state({ ...teach(), stepIndex: FIRST.steps.length - 1 }), { type: 'STEP_COMPLETE' })
     expect(after.active?.phase).toBe('assess')
     expect(after.active?.assessmentIndex).toBe(0)
     expect(after.active?.assessmentScore).toBe(0)
+    expect(after.active?.assessment).toHaveLength(FIRST.assessment.questions)
   })
   it('is a no-op without an active session', () => {
     const s = state(null)
@@ -190,8 +192,8 @@ describe('useLessons hook', () => {
 // --- helpers -----------------------------------------------------------------
 
 function teach(): ActiveLesson {
-  return { lessonId: FIRST.id, phase: 'teach', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0 }
+  return { lessonId: FIRST.id, phase: 'teach', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [] }
 }
 function assess(): ActiveLesson {
-  return { lessonId: FIRST.id, phase: 'assess', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0 }
+  return { lessonId: FIRST.id, phase: 'assess', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [] }
 }

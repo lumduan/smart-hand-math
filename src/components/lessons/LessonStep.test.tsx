@@ -56,3 +56,61 @@ describe('LessonStep — ChooseView', () => {
     expect(onComplete).toHaveBeenCalledOnce()
   })
 })
+
+function renderStep(step: Step, assessment = false) {
+  const onComplete = vi.fn()
+  const onAttempt = vi.fn()
+  const onRetry = vi.fn()
+  render(
+    <AppSettingsProvider>
+      <LessonStep step={step} assessment={assessment} onComplete={onComplete} onAttempt={onAttempt} onRetry={onRetry} />
+    </AppSettingsProvider>,
+  )
+  return { onComplete, onAttempt, onRetry }
+}
+
+const countStep: Step = { id: 't-count', kind: 'count', object: '🍎', count: 3 }
+
+describe('LessonStep — CountView', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('renders a tappable object per item and offers the correct total', () => {
+    renderStep(countStep)
+    expect(screen.getAllByRole('button', { name: 'Tap to count' })).toHaveLength(3)
+    expect(screen.getByRole('button', { name: '3' })).toBeInTheDocument()
+  })
+
+  it('a wrong total retries; the correct total advances', () => {
+    const { onComplete, onRetry } = renderStep(countStep)
+    fireEvent.click(screen.getByRole('button', { name: '2' })) // distractor (count − 1)
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(onComplete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '3' })) // correct total
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onComplete).toHaveBeenCalledOnce()
+  })
+})
+
+const compareStep: Step = {
+  id: 't-compare',
+  kind: 'compare',
+  left: { object: '🍎', count: 4 },
+  right: { object: '🍎', count: 2 },
+  answer: 'more',
+}
+
+describe('LessonStep — CompareView', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('tapping the smaller group retries; tapping the bigger group advances', () => {
+    const { onComplete, onRetry } = renderStep(compareStep)
+    fireEvent.click(screen.getByRole('button', { name: 'Tap the right group' })) // right has fewer → wrong
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(onComplete).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Tap the left group' })) // left has more → correct
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onComplete).toHaveBeenCalledOnce()
+  })
+})

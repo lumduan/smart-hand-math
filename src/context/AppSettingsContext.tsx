@@ -35,6 +35,7 @@ interface AppSettings {
   onboardingDismissed: boolean // first-visit "how it works" banner
   locale: Locale // active UI language
   cameraScale: CameraScale // preview size (sm/md/lg) — Phase 8.1
+  cameraAutoStart: boolean // auto-start the camera on later visits once granted once
   autoSubmitEnabled: boolean // gesture auto-submit on/off (Phase 8.2)
   autoSubmitPromptMs: number // T1: hold before the prompt appears
   autoSubmitConfirmMs: number // T2: hold after the prompt before commit
@@ -45,6 +46,7 @@ interface AppSettings {
   dismissOnboarding: () => void
   setLocale: (locale: Locale) => void
   setCameraScale: (s: CameraScale) => void
+  setCameraAutoStart: (b: boolean) => void
   setAutoSubmitEnabled: (b: boolean) => void
   setAutoSubmitPromptMs: (ms: number) => void
   setAutoSubmitConfirmMs: (ms: number) => void
@@ -59,6 +61,7 @@ interface PersistedSettings {
   onboardingDismissed: boolean
   locale: Locale
   cameraScale: CameraScale
+  cameraAutoStart: boolean
   autoSubmitEnabled: boolean
   autoSubmitPromptMs: number
   autoSubmitConfirmMs: number
@@ -74,6 +77,7 @@ function loadPersisted(): PersistedSettings {
     onboardingDismissed: false,
     locale: 'en',
     cameraScale: 'md',
+    cameraAutoStart: false,
     autoSubmitEnabled: true,
     autoSubmitPromptMs: 1500,
     autoSubmitConfirmMs: 1000,
@@ -133,6 +137,10 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     setPersisted((prev) => ({ ...prev, cameraScale: scale }))
   }, [])
 
+  const setCameraAutoStart = useCallback((b: boolean) => {
+    setPersisted((prev) => ({ ...prev, cameraAutoStart: b }))
+  }, [])
+
   const setAutoSubmitEnabled = useCallback((b: boolean) => {
     setPersisted((prev) => ({ ...prev, autoSubmitEnabled: b }))
   }, [])
@@ -154,6 +162,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       onboardingDismissed: persisted.onboardingDismissed,
       locale: persisted.locale,
       cameraScale: persisted.cameraScale,
+      cameraAutoStart: persisted.cameraAutoStart,
       autoSubmitEnabled: persisted.autoSubmitEnabled,
       autoSubmitPromptMs: persisted.autoSubmitPromptMs,
       autoSubmitConfirmMs: persisted.autoSubmitConfirmMs,
@@ -164,6 +173,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       dismissOnboarding,
       setLocale,
       setCameraScale,
+      setCameraAutoStart,
       setAutoSubmitEnabled,
       setAutoSubmitPromptMs,
       setAutoSubmitConfirmMs,
@@ -177,6 +187,7 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
       dismissOnboarding,
       setLocale,
       setCameraScale,
+      setCameraAutoStart,
       setAutoSubmitEnabled,
       setAutoSubmitPromptMs,
       setAutoSubmitConfirmMs,

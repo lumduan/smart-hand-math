@@ -10,7 +10,6 @@ import { useLessons, type ActiveLesson } from '@/context/LessonsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useTts } from '@/hooks/useTts'
 import { useStrings } from '@/i18n/useStrings'
-import { buildAssessmentStep } from '@/utils/lessonsContent'
 import { finale } from '@/utils/confetti'
 
 /** Runs a single lesson: teach steps → assessment → completion screen. */
@@ -26,11 +25,14 @@ export function LessonRunner() {
   }, [lessonId, active?.lessonId, startLesson])
 
   const isAssess = active?.phase === 'assess'
-  // Generate an assessment item's random target ONCE (memoized by `active`),
-  // not on every render — and hooks must run before the early returns below.
+  // Assessment items are generated once (no consecutive repeats) when the assess
+  // phase begins and stored on `active.assessment`; here we just index into them.
+  // (Hooks must run before the early returns below.)
   const step = useMemo(() => {
     if (!lesson || !active) return null
-    return isAssess ? buildAssessmentStep(lesson, active.assessmentIndex) : lesson.steps[active.stepIndex]
+    // `?.` on the array: a stale `active` (e.g. from a hot reload) can lack the
+    // field → undefined → the `if (!step)` spinner guard handles it (no throw).
+    return isAssess ? active.assessment?.[active.assessmentIndex] : lesson.steps[active.stepIndex]
   }, [isAssess, lesson, active])
 
   if (!lesson) {
