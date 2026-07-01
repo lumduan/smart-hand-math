@@ -3,7 +3,7 @@ import { useHandTracker } from '@/hooks/useHandTracker'
 import { useAudio } from '@/hooks/useAudio'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { useStrings } from '@/i18n/useStrings'
-import { handsToNumber, type TrackedHand } from '@/utils/fingerMathLogic'
+import { handValue, handsToNumber, type TrackedHand } from '@/utils/fingerMathLogic'
 
 /** MediaPipe hand skeleton edges, used to draw the landmark overlay. */
 const HAND_CONNECTIONS: ReadonlyArray<readonly [number, number]> = [
@@ -28,6 +28,14 @@ interface CameraViewProps {
    */
   onNumberChange?: (count: number) => void
   numHands?: number
+  /**
+   * When true, report the single-hand Soroban DIGIT (0..9) of the first hand,
+   * handedness-independent — used by the lessons track where every answer is a
+   * one-hand digit. Without this, `handsToNumber` assigns an anatomical LEFT
+   * hand to the tens column, so a left-handed "3" would read as 30. Defaults off
+   * (Play/Learn keep two-hand 0..99 place value).
+   */
+  digitMode?: boolean
   className?: string
 }
 
@@ -36,7 +44,7 @@ interface CameraViewProps {
  * overlay, denoises the per-frame reading, and reports a stabilized number via
  * `onNumberChange`.
  */
-export function CameraView({ onNumberChange, numHands = 2, className = '' }: CameraViewProps) {
+export function CameraView({ onNumberChange, numHands = 2, digitMode = false, className = '' }: CameraViewProps) {
   const { mirrored, setCameraPermission, cameraScale } = useAppSettings()
   const audio = useAudio()
   const t = useStrings()
@@ -82,9 +90,11 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
     (hands: TrackedHand[]) => {
       draw(hands)
 
-      // Raw Soroban number for this frame; -1 = no hand visible (so a true 0
-      // stays distinguishable from "no input").
-      const raw = hands.length ? handsToNumber(hands) : -1
+      // Raw number for this frame; -1 = no hand visible (so a true 0 stays
+      // distinguishable from "no input"). In digit mode we report the
+      // handedness-independent single-hand digit (0..9); otherwise the two-hand
+      // place-value number (0..99).
+      const raw = hands.length ? (digitMode ? handValue(hands[0].landmarks) : handsToNumber(hands)) : -1
 
       // Denoise by reporting the most frequent value in the rolling window.
       const buffer = recentValues.current
@@ -103,7 +113,7 @@ export function CameraView({ onNumberChange, numHands = 2, className = '' }: Cam
       }
       onNumberChange?.(bestValue)
     },
-    [draw, onNumberChange],
+    [draw, onNumberChange, digitMode],
   )
 
   const { status, error, start, stop } = useHandTracker({

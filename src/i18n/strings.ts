@@ -12,6 +12,29 @@
  * other inline literals. Interpolated strings are typed functions.
  */
 
+// Lesson prose is keyed by lesson/step id so it is indexable at runtime
+// (`resolveStep` in src/utils/lessonsContent.ts). Typed as Record (not `as
+// const`) on purpose, so arbitrary id lookups typecheck. Thai pass = data-only.
+const lessonTitles: Record<string, string> = {
+  'counting-fingers': 'Your counting fingers',
+  'magic-thumb': 'The magic thumb',
+}
+
+const lessonObjectives: Record<string, string> = {
+  'counting-fingers': 'Learn to show 1, 2, 3 and 4 with your fingers.',
+  'magic-thumb': 'Discover that the thumb means five.',
+}
+
+// Per-step narration. `watch` steps need an entry; other kinds fall back to a
+// kind-based prompt (showMePrompt / solvePrompt / …) in `resolveStep`.
+const lessonSteps: Record<string, string> = {
+  'cf-watch-1': 'Each finger is ONE! Pointer up is one. Add the middle finger for two.',
+  'cf-watch-2': 'One, two, three, four — four fingers. Great counting!',
+  'mt-watch-1':
+    "Here's the magic: the THUMB is worth FIVE! That is how we show big numbers on one hand.",
+  'mt-watch-2': 'Thumb equals five. Remember this — it is the secret of finger math!',
+}
+
 const en = {
   doc: {
     title: 'SmartHand Math ✋🧮',
@@ -25,6 +48,7 @@ const en = {
     home: 'Home',
     learn: 'Learn',
     play: 'Play',
+    lessons: 'Lessons',
     mirrorOn: 'Mirror on',
     mirrorOff: 'Mirror off',
     mirrorAria: 'Toggle mirror',
@@ -140,6 +164,37 @@ const en = {
     difficultyHard: 'Hard',
     timer: (remaining: number) => `⏱ ${remaining}s`,
     timerAria: 'Countdown timer',
+  },
+
+  lessons: {
+    navLabel: 'Lessons',
+    listTitle: 'Pick a lesson',
+    listSubtitle: 'Learn step by step. Finish a lesson to unlock the next!',
+    start: 'Start',
+    continue: 'Continue',
+    replay: '🔁 Hear it again',
+    next: 'Next ➡️',
+    listen: '🎧 Listen…',
+    locked: '🔒 Locked',
+    complete: '✅ Done',
+    // Kind-based prompt fallbacks (indexed by resolveStep).
+    showMePrompt: (n: number) => `Show me ${n}!`,
+    countPrompt: 'Tap each one, then pick how many',
+    choosePrompt: 'Tap the answer',
+    comparePrompt: 'Which has more?',
+    solvePrompt: 'Show the answer with your fingers',
+    tryAgain: 'Try again!',
+    assessmentTitle: 'Quick check',
+    passed: '🎉 Lesson complete!',
+    failed: 'Good try! Want another go?',
+    scoreLabel: (score: number, total: number) => `You got ${score} out of ${total}`,
+    starsLabel: (s: number) => `${s} star${s === 1 ? '' : 's'}`,
+    playAgain: '🔁 Try again',
+    back: '🏠 Back to lessons',
+    // Keyed prose (looked up by lesson/step id at runtime).
+    titles: lessonTitles,
+    objectives: lessonObjectives,
+    steps: lessonSteps,
   },
 
   common: {

@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 const NAV_ROUTES = [
   { to: '/', icon: '🏠', end: true, labelKey: 'home' as const },
   { to: '/learn', icon: '✋', end: false, labelKey: 'learn' as const },
+  { to: '/lessons', icon: '🎓', end: false, labelKey: 'lessons' as const },
   { to: '/play', icon: '🧮', end: false, labelKey: 'play' as const },
 ]
 

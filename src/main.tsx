@@ -11,6 +11,7 @@ import '@fontsource/baloo-2/800.css'
 import App from './App'
 import { AppSettingsProvider } from '@/context/AppSettingsContext'
 import { GameProvider } from '@/context/GameContext'
+import { LessonsProvider } from '@/context/LessonsContext'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
@@ -18,10 +19,12 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <AppSettingsProvider>
         <GameProvider>
-          {/* Respect the user's prefers-reduced-motion setting for all motion. */}
-          <MotionConfig reducedMotion="user">
-            <App />
-          </MotionConfig>
+          <LessonsProvider>
+            {/* Respect the user's prefers-reduced-motion setting for all motion. */}
+            <MotionConfig reducedMotion="user">
+              <App />
+            </MotionConfig>
+          </LessonsProvider>
         </GameProvider>
       </AppSettingsProvider>
     </BrowserRouter>
