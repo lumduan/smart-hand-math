@@ -8,6 +8,7 @@ import { StepProgress } from '@/components/lessons/StepProgress'
 import { LESSON_MAP, type Lesson } from '@/content/lessons'
 import { useLessons, type ActiveLesson } from '@/context/LessonsContext'
 import { useAudio } from '@/hooks/useAudio'
+import { useTts } from '@/hooks/useTts'
 import { useStrings } from '@/i18n/useStrings'
 import { buildAssessmentStep } from '@/utils/lessonsContent'
 import { celebrate } from '@/utils/confetti'
@@ -113,15 +114,18 @@ function CompleteScreen({
 }) {
   const t = useStrings()
   const audio = useAudio()
+  const tts = useTts()
   const passed = active.assessmentScore >= lesson.assessment.passThreshold
 
-  // Celebrate once on entry when the lesson was passed.
+  // Celebrate + narrate the result once on entry (a non-reader hears the outcome).
   useEffect(() => {
     if (passed) {
       audio.playWin()
       celebrate()
+      tts.speak(t.lessons.spokenPassed)
     } else {
       audio.playWrong()
+      tts.speak(t.lessons.spokenFailed)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

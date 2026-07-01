@@ -187,6 +187,10 @@ const en = {
     assessmentTitle: 'Quick check',
     passed: '🎉 Lesson complete!',
     failed: 'Good try! Want another go?',
+    // Spoken (TTS) variants — emoji-free so the voice reads cleanly (Phase 8.3-B).
+    spokenGreat: 'Great job!',
+    spokenPassed: 'You did it! Lesson complete.',
+    spokenFailed: "Good try! Let's do it again.",
     scoreLabel: (score: number, total: number) => `You got ${score} out of ${total}`,
     starsLabel: (s: number) => `${s} star${s === 1 ? '' : 's'}`,
     playAgain: '🔁 Try again',

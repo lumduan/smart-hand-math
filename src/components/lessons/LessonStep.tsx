@@ -4,8 +4,10 @@ import { CameraView } from '@/components/camera/CameraView'
 import { Card } from '@/components/common/Card'
 import { Button } from '@/components/common/Button'
 import { HoldRing } from '@/components/lessons/HoldRing'
+import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useAutoSubmit } from '@/hooks/useAutoSubmit'
+import { useTts } from '@/hooks/useTts'
 import { useStrings } from '@/i18n/useStrings'
 import { resolveStep } from '@/utils/lessonsContent'
 import { burst } from '@/utils/confetti'
@@ -17,6 +19,9 @@ const LESSON_PROMPT_MS = 1000 // T1: hold the value steady this long → ring ap
 const LESSON_CONFIRM_MS = 800 // T2: keep holding → commit
 const CORRECT_PAUSE_MS = 900 // show the green tick before advancing
 const TRY_AGAIN_MS = 1200 // show the red cross (assessment miss) before advancing
+// When narration IS spoken, Next normally enables on the speech's `onend`. This
+// cap is a safety net so a dropped/error'd utterance can never leave Next stuck.
+const SPEECH_CAP_MS = 12000
 
 interface LessonStepProps {
   step: LessonStep
@@ -43,23 +48,45 @@ export function LessonStep({ step, onComplete, onAttempt, assessment = false }: 
   }
 }
 
-/** Narrated demo. Phase A: no TTS — Next enables after WATCH_MIN_MS. */
+/**
+ * Narrated demo. The narration is spoken on mount (Phase B); Next enables when
+ * the speech ends. Where speech is muted or unsupported it falls back to a
+ * timer (WATCH_MIN_MS) so a non-reader still gets the minimum look-time.
+ */
 function WatchView({ step, onComplete }: { step: Extract<LessonStep, { kind: 'watch' }>; onComplete: () => void }) {
   const t = useStrings()
   const audio = useAudio()
+  const tts = useTts()
+  const { muted } = useAppSettings()
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
   const [ready, setReady] = useState(false)
   const minMs = step.minDurationMs ?? WATCH_MIN_MS
+  const narration = resolveStep(step, t.lessons)
+  const willSpeak = tts.supported && !muted && narration.length > 0
 
   useEffect(() => {
+    setReady(false)
+    const speech = ttsRef.current
+    if (willSpeak) {
+      speech.speak(narration, { onEnd: () => setReady(true) })
+      // Safety net: enable Next even if `onend` never arrives (speech error).
+      const cap = window.setTimeout(() => setReady(true), SPEECH_CAP_MS)
+      return () => {
+        window.clearTimeout(cap)
+        speech.cancel()
+      }
+    }
+    // No speech (muted / unsupported): enable after the minimum look-time.
     const id = window.setTimeout(() => setReady(true), minMs)
     return () => window.clearTimeout(id)
-  }, [minMs])
+  }, [step.id, narration, minMs, willSpeak])
 
   const visual = Array.isArray(step.visual) ? step.visual.join('   ') : step.visual
 
   return (
     <Card className="items-center text-center">
-      <p className="font-display text-lg text-base-content/70">{resolveStep(step, t.lessons)}</p>
+      <p className="font-display text-lg text-base-content/70">{narration}</p>
       <motion.div
         key={step.id}
         className="my-3 font-display text-7xl font-extrabold text-primary"
@@ -69,9 +96,16 @@ function WatchView({ step, onComplete }: { step: Extract<LessonStep, { kind: 'wa
       >
         {visual}
       </motion.div>
-      <Button variant="primary" disabled={!ready} onClick={() => { audio.playClick(); onComplete() }}>
-        {ready ? t.lessons.next : t.lessons.listen}
-      </Button>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        {willSpeak && (
+          <Button variant="ghost" onClick={() => ttsRef.current.speak(narration)}>
+            {t.lessons.replay}
+          </Button>
+        )}
+        <Button variant="primary" disabled={!ready} onClick={() => { audio.playClick(); onComplete() }}>
+          {ready ? t.lessons.next : t.lessons.listen}
+        </Button>
+      </div>
     </Card>
   )
 }
@@ -90,18 +124,26 @@ function ShowMeView({
 }) {
   const t = useStrings()
   const audio = useAudio()
+  const tts = useTts()
+  const { muted } = useAppSettings()
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
   const target = step.target
+  const prompt = resolveStep(step, t.lessons)
+  const canReplay = tts.supported && !muted
   const [detected, setDetected] = useState(-1)
   const [feedback, setFeedback] = useState<null | 'correct' | 'wrong'>(null)
   const doneRef = useRef(false)
 
   // The parent reuses this view across consecutive `showMe` steps (so the camera
-  // stays live). Reset per-step interaction state when the step id changes;
-  // useAutoSubmit resets its hold via `questionId` on its own.
+  // stays live). Reset per-step interaction state when the step id changes and
+  // speak the new prompt; useAutoSubmit resets its hold via `questionId` on its own.
   useEffect(() => {
     doneRef.current = false
     setFeedback(null)
-  }, [step.id])
+    ttsRef.current.speak(prompt)
+    return () => ttsRef.current.cancel()
+  }, [step.id, prompt])
 
   // Teaching: the hold only arms on the CORRECT value (a wrong one held forever
   // never commits). Assessment: any held value commits and is graded.
@@ -120,8 +162,10 @@ function ShowMeView({
       if (correct) {
         audio.playCorrect()
         burst()
+        ttsRef.current.speak(t.lessons.spokenGreat)
       } else {
         audio.playWrong()
+        ttsRef.current.speak(t.lessons.tryAgain)
       }
       window.setTimeout(() => {
         if (assessment) onAttempt?.(correct)
@@ -133,7 +177,16 @@ function ShowMeView({
   return (
     <div className="space-y-4">
       <Card className="items-center text-center">
-        <p className="font-display text-lg text-base-content/70">{resolveStep(step, t.lessons)}</p>
+        <p className="font-display text-lg text-base-content/70">{prompt}</p>
+        {canReplay && (
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm rounded-full font-display"
+            onClick={() => ttsRef.current.speak(prompt)}
+          >
+            {t.lessons.replay}
+          </button>
+        )}
         <div className="my-2 font-display text-7xl font-extrabold text-primary">{target}</div>
         {feedback === 'correct' ? (
           <motion.div
@@ -174,9 +227,19 @@ function ShowMeView({
 function PromptView({ step, onComplete }: { step: LessonStep; onComplete: () => void }) {
   const t = useStrings()
   const audio = useAudio()
+  const tts = useTts()
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
+  const prompt = resolveStep(step, t.lessons)
+
+  useEffect(() => {
+    ttsRef.current.speak(prompt)
+    return () => ttsRef.current.cancel()
+  }, [step.id, prompt])
+
   return (
     <Card className="items-center text-center">
-      <p className="font-display text-lg">{resolveStep(step, t.lessons)}</p>
+      <p className="font-display text-lg">{prompt}</p>
       <Button variant="primary" className="mt-3" onClick={() => { audio.playClick(); onComplete() }}>
         {t.lessons.next}
       </Button>
