@@ -119,6 +119,14 @@ describe('reducer — ASSESS_ANSWER', () => {
     expect(after.progress[FIRST.id].bestAssessment).toBe(5)
     expect(after.progress[SECOND.id].status).toBe('unlocked')
   })
+  it('awards 1 star on a passing run with >2 teaching retries and not perfect', () => {
+    // attempts come from wrong teaching answers (STEP_RETRY); >2 + a 4/5 pass = 1 star.
+    const s = state({ ...assess(), assessmentIndex: FIRST.assessment.questions - 1, assessmentScore: 3, attempts: 3 })
+    const after = reducer(s, { type: 'ASSESS_ANSWER', correct: true }) // score -> 4 (pass, not perfect)
+    expect(after.active?.assessmentScore).toBe(4)
+    expect(after.progress[FIRST.id].status).toBe('complete')
+    expect(after.progress[FIRST.id].stars).toBe(1)
+  })
   it('finalizes a FAIL on the last item: inProgress, keeps best, does NOT unlock next', () => {
     const s = state({ ...assess(), assessmentIndex: FIRST.assessment.questions - 1, assessmentScore: 0, attempts: 0 })
     const after = reducer(s, { type: 'ASSESS_ANSWER', correct: true }) // score -> 1 (< 4)

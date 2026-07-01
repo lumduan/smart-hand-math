@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useAppSettings } from '@/context/AppSettingsContext'
 
-export type SoundName = 'correct' | 'wrong' | 'click' | 'win' | 'lose' | 'tick'
+export type SoundName =
+  | 'correct'
+  | 'wrong'
+  | 'click'
+  | 'win'
+  | 'lose'
+  | 'tick'
+  | 'stepComplete'
+  | 'tryAgain'
+  | 'lessonComplete'
 
 /**
  * Synthesized game sound effects via the Web Audio API — no audio files, no
@@ -115,6 +124,20 @@ export function useAudio() {
           tone(ctx, master, { freq: 349.23, type: 'triangle', gain: 0.4, duration: 0.22, start: 0.16 })
           tone(ctx, master, { freq: 261.63, type: 'triangle', gain: 0.45, duration: 0.4, start: 0.36 })
           break
+        case 'stepComplete': // gentle C5→E5 rise as a teaching step advances
+          tone(ctx, master, { freq: 523.25, gain: 0.34, duration: 0.12, start: 0 })
+          tone(ctx, master, { freq: 659.25, gain: 0.38, duration: 0.16, start: 0.1 })
+          break
+        case 'tryAgain': // soft, non-punitive nudge — gentler than `wrong`
+          tone(ctx, master, { freq: 392.0, type: 'triangle', gain: 0.3, duration: 0.18, start: 0 })
+          break
+        case 'lessonComplete': // celebratory C5-E5-G5-C6-E6 fanfare (paired with finale())
+          tone(ctx, master, { freq: 523.25, gain: 0.4, duration: 0.12, start: 0 })
+          tone(ctx, master, { freq: 659.25, gain: 0.4, duration: 0.12, start: 0.12 })
+          tone(ctx, master, { freq: 783.99, gain: 0.42, duration: 0.12, start: 0.24 })
+          tone(ctx, master, { freq: 1046.5, gain: 0.46, duration: 0.14, start: 0.36 })
+          tone(ctx, master, { freq: 1318.51, gain: 0.5, duration: 0.34, start: 0.5 })
+          break
       }
     },
     [getCtx, muted, tone],
@@ -129,6 +152,9 @@ export function useAudio() {
       playWin: () => play('win'),
       playLose: () => play('lose'),
       playTick: () => play('tick'),
+      playStepComplete: () => play('stepComplete'),
+      playTryAgain: () => play('tryAgain'),
+      playLessonComplete: () => play('lessonComplete'),
     }),
     [play],
   )

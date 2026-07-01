@@ -11,14 +11,14 @@ import { useAudio } from '@/hooks/useAudio'
 import { useTts } from '@/hooks/useTts'
 import { useStrings } from '@/i18n/useStrings'
 import { buildAssessmentStep } from '@/utils/lessonsContent'
-import { celebrate } from '@/utils/confetti'
+import { finale } from '@/utils/confetti'
 
 /** Runs a single lesson: teach steps → assessment → completion screen. */
 export function LessonRunner() {
   const { lessonId } = useParams()
   const lesson = lessonId ? LESSON_MAP[lessonId] : undefined
   const t = useStrings()
-  const { active, progress, startLesson, stepComplete, assessAnswer, exitLesson } = useLessons()
+  const { active, progress, startLesson, stepComplete, retryStep, assessAnswer, exitLesson } = useLessons()
 
   // Start (or restart) a fresh session whenever the route target changes.
   useEffect(() => {
@@ -94,7 +94,13 @@ export function LessonRunner() {
         across them. Per-step state resets via the step.id effect inside each
         view (and useAutoSubmit resets on its questionId = step.id).
       */}
-      <LessonStep step={step} assessment={isAssess} onComplete={stepComplete} onAttempt={assessAnswer} />
+      <LessonStep
+        step={step}
+        assessment={isAssess}
+        onComplete={stepComplete}
+        onAttempt={assessAnswer}
+        onRetry={retryStep}
+      />
     </div>
   )
 }
@@ -120,11 +126,11 @@ function CompleteScreen({
   // Celebrate + narrate the result once on entry (a non-reader hears the outcome).
   useEffect(() => {
     if (passed) {
-      audio.playWin()
-      celebrate()
+      audio.playLessonComplete()
+      finale()
       tts.speak(t.lessons.spokenPassed)
     } else {
-      audio.playWrong()
+      audio.playTryAgain() // gentle, non-punitive (RFC-0004)
       tts.speak(t.lessons.spokenFailed)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

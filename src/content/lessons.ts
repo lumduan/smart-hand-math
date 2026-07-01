@@ -161,7 +161,160 @@ export const CURRICULUM: readonly Lesson[] = [
     assessment: {
       questions: 5,
       passThreshold: 4,
-      generator: { kind: 'showMe', minAnswer: 5, maxAnswer: 5, numHands: 1 },
+      // Mix 0–5 (fist through open hand) so the quick-check exercises the thumb=5 insight.
+      generator: { kind: 'showMe', minAnswer: 0, maxAnswer: 5, numHands: 1 },
+    },
+  },
+
+  // --- Unit 2 (cont.): 6–9 and full 0–9 recall --------------------------------
+  {
+    id: 'five-and-more',
+    unit: 'soroban-0-9',
+    order: 3,
+    targetNumbers: [6, 7, 8, 9],
+    steps: [
+      { id: 'fm-watch-1', kind: 'watch', visual: '🖐️ + ☝️ = 6' },
+      { id: 'fm-show-6', kind: 'showMe', target: 6, numHands: 1 },
+      { id: 'fm-show-7', kind: 'showMe', target: 7, numHands: 1 },
+      { id: 'fm-show-8', kind: 'showMe', target: 8, numHands: 1 },
+      { id: 'fm-show-9', kind: 'showMe', target: 9, numHands: 1 },
+      { id: 'fm-watch-2', kind: 'watch', visual: '6  7  8  9   ✋' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'showMe', minAnswer: 6, maxAnswer: 9, numHands: 1 },
+    },
+  },
+  {
+    id: 'all-the-numbers',
+    unit: 'soroban-0-9',
+    order: 4,
+    targetNumbers: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    steps: [
+      { id: 'an-show-0', kind: 'showMe', target: 0, numHands: 1 },
+      { id: 'an-show-3', kind: 'showMe', target: 3, numHands: 1 },
+      { id: 'an-show-5', kind: 'showMe', target: 5, numHands: 1 },
+      { id: 'an-show-7', kind: 'showMe', target: 7, numHands: 1 },
+      { id: 'an-show-9', kind: 'showMe', target: 9, numHands: 1 },
+      { id: 'an-watch-1', kind: 'watch', visual: '0 … 9   🎉' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'showMe', minAnswer: 0, maxAnswer: 9, numHands: 1 },
+    },
+  },
+
+  // --- Unit 3: Putting together (addition) ------------------------------------
+  {
+    id: 'adding-is-more',
+    unit: 'addition',
+    order: 5,
+    targetNumbers: [2, 3, 4],
+    steps: [
+      { id: 'am-watch-1', kind: 'watch', visual: '1 + 1 = 2' },
+      { id: 'am-solve-1', kind: 'solve', display: '1 + 1 = ?', answer: 2, numHands: 1 },
+      { id: 'am-solve-2', kind: 'solve', display: '3 + 1 = ?', answer: 4, numHands: 1 },
+      { id: 'am-solve-3', kind: 'solve', display: '2 + 2 = ?', answer: 4, numHands: 1 },
+      { id: 'am-watch-2', kind: 'watch', visual: 'Adding makes more ➕' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'addition', maxAnswer: 4 },
+    },
+  },
+  {
+    id: 'part-and-whole',
+    unit: 'addition',
+    order: 6,
+    targetNumbers: [5],
+    steps: [
+      { id: 'pw-watch-1', kind: 'watch', visual: '2 + 3 = 5' },
+      { id: 'pw-solve-1', kind: 'solve', display: '2 + 3 = ?', answer: 5, numHands: 1 },
+      { id: 'pw-solve-2', kind: 'solve', display: '1 + 4 = ?', answer: 5, numHands: 1 },
+      { id: 'pw-choose-1', kind: 'choose', display: '1 + ? = 4', options: [2, 3, 4], answer: 3 },
+      { id: 'pw-solve-3', kind: 'solve', display: '0 + 5 = ?', answer: 5, numHands: 1 },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'addition', maxAnswer: 5 },
+    },
+  },
+  {
+    id: 'bigger-adds',
+    unit: 'addition',
+    order: 7,
+    targetNumbers: [6, 7, 8, 9],
+    steps: [
+      { id: 'ba-watch-1', kind: 'watch', visual: '5 + 2 = 7' },
+      { id: 'ba-solve-1', kind: 'solve', display: '5 + 1 = ?', answer: 6, numHands: 1 },
+      { id: 'ba-solve-2', kind: 'solve', display: '6 + 2 = ?', answer: 8, numHands: 1 },
+      { id: 'ba-solve-3', kind: 'solve', display: '4 + 3 = ?', answer: 7, numHands: 1 },
+      { id: 'ba-solve-4', kind: 'solve', display: '5 + 4 = ?', answer: 9, numHands: 1 },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'addition', maxAnswer: 9 },
+    },
+  },
+
+  // --- Unit 4: Taking away (subtraction) --------------------------------------
+  {
+    id: 'taking-away',
+    unit: 'subtraction',
+    order: 8,
+    targetNumbers: [2, 3],
+    steps: [
+      { id: 'ta-watch-1', kind: 'watch', visual: '3 − 1 = 2' },
+      { id: 'ta-solve-1', kind: 'solve', display: '3 − 1 = ?', answer: 2, numHands: 1 },
+      { id: 'ta-solve-2', kind: 'solve', display: '4 − 1 = ?', answer: 3, numHands: 1 },
+      { id: 'ta-solve-3', kind: 'solve', display: '5 − 2 = ?', answer: 3, numHands: 1 },
+      { id: 'ta-watch-2', kind: 'watch', visual: 'Taking away makes fewer ➖' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'subtraction', maxAnswer: 4 },
+    },
+  },
+  {
+    id: 'how-many-left',
+    unit: 'subtraction',
+    order: 9,
+    targetNumbers: [0, 2, 4],
+    steps: [
+      { id: 'hl-watch-1', kind: 'watch', visual: '5 − 1 = 4' },
+      { id: 'hl-solve-1', kind: 'solve', display: '5 − 1 = ?', answer: 4, numHands: 1 },
+      { id: 'hl-solve-2', kind: 'solve', display: '4 − 2 = ?', answer: 2, numHands: 1 },
+      { id: 'hl-solve-3', kind: 'solve', display: '5 − 5 = ?', answer: 0, numHands: 1 },
+      { id: 'hl-solve-4', kind: 'solve', display: '3 − 3 = ?', answer: 0, numHands: 1 },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'subtraction', maxAnswer: 5 },
+    },
+  },
+  {
+    id: 'bigger-take-aways',
+    unit: 'subtraction',
+    order: 10,
+    targetNumbers: [0, 2, 5, 7],
+    steps: [
+      { id: 'bt-watch-1', kind: 'watch', visual: '9 − 4 = 5' },
+      { id: 'bt-solve-1', kind: 'solve', display: '9 − 2 = ?', answer: 7, numHands: 1 },
+      { id: 'bt-solve-2', kind: 'solve', display: '8 − 3 = ?', answer: 5, numHands: 1 },
+      { id: 'bt-solve-3', kind: 'solve', display: '7 − 5 = ?', answer: 2, numHands: 1 },
+      { id: 'bt-solve-4', kind: 'solve', display: '9 − 9 = ?', answer: 0, numHands: 1 },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'subtraction', maxAnswer: 9 },
     },
   },
 ] as const

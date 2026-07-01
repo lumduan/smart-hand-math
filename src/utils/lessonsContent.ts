@@ -4,8 +4,9 @@
  * gate). Lesson prose is looked up from the i18n `lessons` block; assessment
  * items are generated on the fly from each lesson's `assessment.generator`.
  */
-import type { Lesson, LessonStep, ShowMeStep } from '@/content/lessons'
+import type { Lesson, LessonStep, ShowMeStep, SolveStep } from '@/content/lessons'
 import type { Strings } from '@/i18n/strings'
+import { generateAddition, generateSubtraction } from '@/utils/mathGenerator'
 
 /** Inclusive random integer in [min, max]; caller guarantees min <= max. */
 function randInt(min: number, max: number): number {
@@ -29,28 +30,53 @@ export function resolveStep(step: LessonStep, lessons: Strings['lessons']): stri
 }
 
 /**
- * Build the `index`-th assessment step for a lesson. Phase A supports only the
- * `showMe` generator (digit recall); addition/subtraction/mixed generators are
- * declared in the data model and wired up in Phase C.
+ * Build the `index`-th assessment step for a lesson from its generator.
+ * `showMe` produces a digit-recall step; `addition`/`subtraction`/`mixed`
+ * produce a `solve` step (an `a ± b = ?` expression) whose single-hand answer
+ * (0–9) the child shows with fingers. Answers are always ≤ `maxAnswer` ≤ 9, so
+ * every generated item is showable on one hand (RFC-0004 single-hand cap).
  */
-export function buildAssessmentStep(lesson: Lesson, index: number): ShowMeStep {
+export function buildAssessmentStep(lesson: Lesson, index: number): ShowMeStep | SolveStep {
   const gen = lesson.assessment.generator
-  if (gen.kind !== 'showMe') {
-    throw new Error(
-      `buildAssessmentStep: generator '${gen.kind}' not implemented (Phase A supports showMe only)`,
-    )
-  }
-  const min = Math.min(gen.minAnswer ?? 0, gen.maxAnswer)
-  const target = randInt(min, gen.maxAnswer)
-  return {
-    id: `${lesson.id}-assess-${index}`,
-    kind: 'showMe',
-    target,
-    numHands: gen.numHands ?? 1,
+  const id = `${lesson.id}-assess-${index}`
+  switch (gen.kind) {
+    case 'showMe': {
+      const min = Math.min(gen.minAnswer ?? 0, gen.maxAnswer)
+      const target = randInt(min, gen.maxAnswer)
+      return { id, kind: 'showMe', target, numHands: gen.numHands ?? 1 }
+    }
+    case 'addition': {
+      const q = generateAddition(gen.maxAnswer)
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+    }
+    case 'subtraction': {
+      const q = generateSubtraction(gen.maxAnswer)
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+    }
+    case 'mixed': {
+      const op = gen.ops[randInt(0, gen.ops.length - 1)]
+      const q = op === '+' ? generateAddition(gen.maxAnswer) : generateSubtraction(gen.maxAnswer)
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+    }
   }
 }
 
 /** Whether an assessment score meets the lesson's pass threshold. */
 export function assessmentPassed(lesson: Lesson, score: number): boolean {
   return score >= lesson.assessment.passThreshold
+}
+
+/**
+ * A speakable form of a `solve` expression: strips the ` = ?` tail and reads the
+ * operators as words, so TTS says "two plus three" for "2 + 3 = ?". Used to
+ * narrate generated assessment items (which have no authored narration) to
+ * pre-readers.
+ */
+export function spokenExpression(display: string): string {
+  return display
+    .replace(/\s*=\s*\?\s*$/, '')
+    .replace(/\+/g, ' plus ')
+    .replace(/−/g, ' minus ') // U+2212
+    .replace(/\s+/g, ' ')
+    .trim()
 }

@@ -18,11 +18,27 @@
 const lessonTitles: Record<string, string> = {
   'counting-fingers': 'Your counting fingers',
   'magic-thumb': 'The magic thumb',
+  'five-and-more': 'Five and more',
+  'all-the-numbers': 'All the numbers',
+  'adding-is-more': 'Adding is more',
+  'part-and-whole': 'Part and whole',
+  'bigger-adds': 'Bigger adds',
+  'taking-away': 'Taking away',
+  'how-many-left': 'How many are left?',
+  'bigger-take-aways': 'Bigger take-aways',
 }
 
 const lessonObjectives: Record<string, string> = {
   'counting-fingers': 'Learn to show 1, 2, 3 and 4 with your fingers.',
   'magic-thumb': 'Discover that the thumb means five.',
+  'five-and-more': 'Make 6, 7, 8 and 9 — five and a few more fingers.',
+  'all-the-numbers': 'Show any number from 0 to 9.',
+  'adding-is-more': 'Add 1 and 2 — adding makes more.',
+  'part-and-whole': 'Put parts together to make 5.',
+  'bigger-adds': 'Add up to sums of 9 using your thumb.',
+  'taking-away': 'Take away 1 and 2 — count back.',
+  'how-many-left': 'Subtract within 5. How many are left?',
+  'bigger-take-aways': 'Take away bigger numbers, up to 9.',
 }
 
 // Per-step narration. `watch` steps need an entry; other kinds fall back to a
@@ -33,6 +49,45 @@ const lessonSteps: Record<string, string> = {
   'mt-watch-1':
     "Here's the magic: the THUMB is worth FIVE! That is how we show big numbers on one hand.",
   'mt-watch-2': 'Thumb equals five. Remember this — it is the secret of finger math!',
+
+  // Unit 2 (cont.) — 6–9 and full recall (showMe steps use "Show me N!").
+  'fm-watch-1': 'Six is five and one more! Open your thumb, then add one finger.',
+  'fm-watch-2': 'Six, seven, eight, nine — five and more. You did it!',
+  'an-watch-1': 'You know them all now, zero all the way to nine. Amazing!',
+
+  // Unit 3 — addition. `solve` steps speak the problem for pre-readers.
+  'am-watch-1': 'When we add, we put groups together to make more.',
+  'am-solve-1': 'One, and one more. How many? Show me!',
+  'am-solve-2': 'Three, and one more. Show me the answer!',
+  'am-solve-3': 'Two, and two more. Show me!',
+  'am-watch-2': 'Adding always makes the number bigger.',
+  'pw-watch-1': 'Two and three make five. Little parts join into a whole.',
+  'pw-solve-1': 'Two, and three more. Show me!',
+  'pw-solve-2': 'One, and four more. Show me!',
+  'pw-choose-1': 'One plus what makes four? Tap the answer!',
+  'pw-solve-3': 'Zero, and five more. Show me!',
+  'ba-watch-1': 'Five and two more is seven. Use your thumb for five!',
+  'ba-solve-1': 'Five, and one more. Show me!',
+  'ba-solve-2': 'Six, and two more. Show me!',
+  'ba-solve-3': 'Four, and three more. Show me!',
+  'ba-solve-4': 'Five, and four more. Show me!',
+
+  // Unit 4 — subtraction.
+  'ta-watch-1': 'When we take away, there are fewer left.',
+  'ta-solve-1': 'Three, take away one. How many are left? Show me!',
+  'ta-solve-2': 'Four, take away one. Show me!',
+  'ta-solve-3': 'Five, take away two. Show me!',
+  'ta-watch-2': 'Taking away always makes the number smaller.',
+  'hl-watch-1': 'Five take away one leaves four. How many are left?',
+  'hl-solve-1': 'Five, take away one. Show me!',
+  'hl-solve-2': 'Four, take away two. Show me!',
+  'hl-solve-3': 'Five, take away five. Make a fist for zero!',
+  'hl-solve-4': 'Three, take away three. Show me zero!',
+  'bt-watch-1': 'Nine take away four is five. Count back!',
+  'bt-solve-1': 'Nine, take away two. Show me!',
+  'bt-solve-2': 'Eight, take away three. Show me!',
+  'bt-solve-3': 'Seven, take away five. Show me!',
+  'bt-solve-4': 'Nine, take away nine. Show me zero!',
 }
 
 const en = {
@@ -195,6 +250,10 @@ const en = {
     starsLabel: (s: number) => `${s} star${s === 1 ? '' : 's'}`,
     playAgain: '🔁 Try again',
     back: '🏠 Back to lessons',
+    // No-camera fallback for camera steps (single-hand answers are 0–9).
+    padTitle: 'No camera? Type the answer (0–9)',
+    padAria: 'Type the answer',
+    padSubmit: 'Check',
     // Keyed prose (looked up by lesson/step id at runtime).
     titles: lessonTitles,
     objectives: lessonObjectives,

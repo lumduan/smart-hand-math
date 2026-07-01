@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import {
   generateQuestion,
+  generateAddition,
+  generateSubtraction,
   difficultyForScore,
   type Difficulty,
   type Operator,
@@ -21,6 +23,30 @@ describe('difficultyForScore', () => {
   ])('score %i → %s', (score, expected) => {
     expect(difficultyForScore(score)).toBe(expected as Difficulty)
   })
+})
+
+describe('generateAddition / generateSubtraction (lesson solve steps)', () => {
+  for (const maxAnswer of [4, 5, 9]) {
+    it(`addition ≤ ${maxAnswer}: sum in [0, ${maxAnswer}], '+' shape`, () => {
+      for (let i = 0; i < SAMPLE; i++) {
+        const q = generateAddition(maxAnswer)
+        expect(q.answer).toBeGreaterThanOrEqual(0)
+        expect(q.answer).toBeLessThanOrEqual(maxAnswer)
+        expect(q.op).toBe('+')
+        expect(q.text).toMatch(/^\d+ \+ \d+ = \?$/)
+      }
+    })
+
+    it(`subtraction ≤ ${maxAnswer}: result in [0, ${maxAnswer}], '−' shape`, () => {
+      for (let i = 0; i < SAMPLE; i++) {
+        const q = generateSubtraction(maxAnswer)
+        expect(q.answer).toBeGreaterThanOrEqual(0)
+        expect(q.answer).toBeLessThanOrEqual(maxAnswer)
+        expect(q.op).toBe('-')
+        expect(q.text).toMatch(/^\d+ − \d+ = \?$/) // U+2212
+      }
+    })
+  }
 })
 
 describe('generateQuestion — range & shape invariants', () => {

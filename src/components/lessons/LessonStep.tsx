@@ -4,12 +4,13 @@ import { CameraView } from '@/components/camera/CameraView'
 import { Card } from '@/components/common/Card'
 import { Button } from '@/components/common/Button'
 import { HoldRing } from '@/components/lessons/HoldRing'
+import { NumberPad } from '@/components/lessons/NumberPad'
 import { useAppSettings } from '@/context/AppSettingsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useAutoSubmit } from '@/hooks/useAutoSubmit'
 import { useTts } from '@/hooks/useTts'
 import { useStrings } from '@/i18n/useStrings'
-import { resolveStep } from '@/utils/lessonsContent'
+import { resolveStep, spokenExpression } from '@/utils/lessonsContent'
 import { burst } from '@/utils/confetti'
 import type { LessonStep } from '@/content/lessons'
 
@@ -28,21 +29,43 @@ interface LessonStepProps {
   onComplete: () => void
   /** Assessment-phase callback (grades the attempt); drives assessment advance. */
   onAttempt?: (correct: boolean) => void
+  /** A wrong answer during a teaching step (feeds the star rating). */
+  onRetry?: () => void
   /** True during the assessment phase: commit any held value and grade it. */
   assessment?: boolean
 }
 
 /**
- * Dispatches on `step.kind`. Phase A implements `watch` + `showMe`; the other
- * kinds render a prompt + Next (filled in by Phase C). Advancement is the
- * parent's job — this component only signals completion via callbacks.
+ * Dispatches on `step.kind`. `watch`, `showMe`, `solve` and `choose` are built;
+ * `count`/`compare` (Unit 1) fall back to a prompt placeholder. Advancement is
+ * the parent's job — this component only signals via callbacks. `showMe` and
+ * `solve` share the same camera-answer view (a digit shown with fingers).
  */
-export function LessonStep({ step, onComplete, onAttempt, assessment = false }: LessonStepProps) {
+export function LessonStep({ step, onComplete, onAttempt, onRetry, assessment = false }: LessonStepProps) {
   switch (step.kind) {
     case 'watch':
       return <WatchView step={step} onComplete={onComplete} />
     case 'showMe':
-      return <ShowMeView step={step} onComplete={onComplete} onAttempt={onAttempt} assessment={assessment} />
+    case 'solve':
+      return (
+        <FingerAnswerView
+          step={step}
+          assessment={assessment}
+          onComplete={onComplete}
+          onAttempt={onAttempt}
+          onRetry={onRetry}
+        />
+      )
+    case 'choose':
+      return (
+        <ChooseView
+          step={step}
+          assessment={assessment}
+          onComplete={onComplete}
+          onAttempt={onAttempt}
+          onRetry={onRetry}
+        />
+      )
     default:
       return <PromptView step={step} onComplete={onComplete} />
   }
@@ -110,17 +133,26 @@ function WatchView({ step, onComplete }: { step: Extract<LessonStep, { kind: 'wa
   )
 }
 
-/** Hold up the target number of fingers; camera-validated. */
-function ShowMeView({
+/**
+ * Shared camera-answer view for `showMe` (reproduce a digit) and `solve` (work
+ * out `a ± b` and show the answer). While teaching, the hold arms only on the
+ * correct value, so the camera never commits a wrong answer; the number-pad
+ * fallback (no-camera play) can, and a wrong pad answer is a gentle "try again"
+ * that counts as a retry (feeds the star rating). Assessment grades whatever is
+ * submitted (camera or pad) and advances.
+ */
+function FingerAnswerView({
   step,
+  assessment,
   onComplete,
   onAttempt,
-  assessment,
+  onRetry,
 }: {
-  step: Extract<LessonStep, { kind: 'showMe' }>
+  step: Extract<LessonStep, { kind: 'showMe' | 'solve' }>
+  assessment: boolean
   onComplete: () => void
   onAttempt?: (correct: boolean) => void
-  assessment: boolean
+  onRetry?: () => void
 }) {
   const t = useStrings()
   const audio = useAudio()
@@ -128,50 +160,73 @@ function ShowMeView({
   const { muted } = useAppSettings()
   const ttsRef = useRef(tts)
   ttsRef.current = tts
-  const target = step.target
+
+  const expected = step.kind === 'showMe' ? step.target : step.answer
+  const glyph = step.kind === 'showMe' ? String(step.target) : step.display
+  const numHands = step.numHands ?? 1
   const prompt = resolveStep(step, t.lessons)
+  // Spoken text: authored narration wins; a generated `solve` with none speaks
+  // the expression itself ("two plus three") so a pre-reader hears the problem.
+  const authored = t.lessons.steps[step.id]
+  const spoken =
+    typeof authored === 'string' ? authored : step.kind === 'solve' ? spokenExpression(step.display) : prompt
   const canReplay = tts.supported && !muted
+
   const [detected, setDetected] = useState(-1)
   const [feedback, setFeedback] = useState<null | 'correct' | 'wrong'>(null)
+  const [locked, setLocked] = useState(false)
   const doneRef = useRef(false)
 
-  // The parent reuses this view across consecutive `showMe` steps (so the camera
-  // stays live). Reset per-step interaction state when the step id changes and
-  // speak the new prompt; useAutoSubmit resets its hold via `questionId` on its own.
+  // Reset per-step state + narrate whenever the step id changes (the parent
+  // reuses this instance across consecutive steps so the camera stays live).
   useEffect(() => {
     doneRef.current = false
+    setLocked(false)
     setFeedback(null)
-    ttsRef.current.speak(prompt)
+    setDetected(-1)
+    ttsRef.current.speak(spoken)
     return () => ttsRef.current.cancel()
-  }, [step.id, prompt])
+  }, [step.id, spoken])
 
-  // Teaching: the hold only arms on the CORRECT value (a wrong one held forever
-  // never commits). Assessment: any held value commits and is graded.
+  // Grade a submitted value (camera hold or pad).
+  const grade = (n: number) => {
+    if (doneRef.current) return
+    const correct = n === expected
+    if (!assessment && !correct) {
+      // Teaching miss (only reachable via the pad): gentle nudge, count a retry, stay put.
+      setFeedback('wrong')
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+      onRetry?.()
+      window.setTimeout(() => setFeedback(null), TRY_AGAIN_MS)
+      return
+    }
+    doneRef.current = true
+    setLocked(true)
+    setFeedback(correct ? 'correct' : 'wrong')
+    if (correct) {
+      audio.play(assessment ? 'correct' : 'stepComplete')
+      burst()
+      ttsRef.current.speak(t.lessons.spokenGreat)
+    } else {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+    }
+    window.setTimeout(() => {
+      if (assessment) onAttempt?.(correct)
+      else onComplete()
+    }, correct ? CORRECT_PAUSE_MS : TRY_AGAIN_MS)
+  }
+
+  // Teaching: the hold only arms on the correct value. Assessment: any value grades.
   const pending = useAutoSubmit({
     enabled: true,
     promptMs: step.promptMs ?? LESSON_PROMPT_MS,
     confirmMs: step.confirmMs ?? LESSON_CONFIRM_MS,
     detected,
-    canSubmit: !doneRef.current && (assessment ? detected >= 0 : detected === target),
+    canSubmit: !doneRef.current && (assessment ? detected >= 0 : detected === expected),
     questionId: step.id,
-    commit: (n: number) => {
-      if (doneRef.current) return
-      doneRef.current = true
-      const correct = assessment ? n === target : true
-      setFeedback(correct ? 'correct' : 'wrong')
-      if (correct) {
-        audio.playCorrect()
-        burst()
-        ttsRef.current.speak(t.lessons.spokenGreat)
-      } else {
-        audio.playWrong()
-        ttsRef.current.speak(t.lessons.tryAgain)
-      }
-      window.setTimeout(() => {
-        if (assessment) onAttempt?.(correct)
-        else onComplete()
-      }, correct ? CORRECT_PAUSE_MS : TRY_AGAIN_MS)
-    },
+    commit: grade,
   })
 
   return (
@@ -182,12 +237,12 @@ function ShowMeView({
           <button
             type="button"
             className="btn btn-ghost btn-sm rounded-full font-display"
-            onClick={() => ttsRef.current.speak(prompt)}
+            onClick={() => ttsRef.current.speak(spoken)}
           >
             {t.lessons.replay}
           </button>
         )}
-        <div className="my-2 font-display text-7xl font-extrabold text-primary">{target}</div>
+        <div className="my-2 font-display text-6xl font-extrabold text-primary">{glyph}</div>
         {feedback === 'correct' ? (
           <motion.div
             className="badge badge-lg badge-success font-display"
@@ -218,12 +273,118 @@ function ShowMeView({
         )}
       </Card>
 
-      <CameraView digitMode numHands={step.numHands ?? 1} onNumberChange={setDetected} />
+      <CameraView digitMode numHands={numHands} onNumberChange={setDetected} />
+
+      <NumberPad
+        key={step.id}
+        max={numHands === 2 ? 99 : 9}
+        disabled={locked}
+        onSubmit={grade}
+        title={t.lessons.padTitle}
+        submitLabel={t.lessons.padSubmit}
+        ariaLabel={t.lessons.padAria}
+      />
     </div>
   )
 }
 
-/** Placeholder for `count` / `choose` / `compare` / `solve` (Phase C views). */
+/** Multiple choice: tap the correct option (used by teaching `choose` steps). */
+function ChooseView({
+  step,
+  assessment,
+  onComplete,
+  onAttempt,
+  onRetry,
+}: {
+  step: Extract<LessonStep, { kind: 'choose' }>
+  assessment: boolean
+  onComplete: () => void
+  onAttempt?: (correct: boolean) => void
+  onRetry?: () => void
+}) {
+  const t = useStrings()
+  const audio = useAudio()
+  const tts = useTts()
+  const { muted } = useAppSettings()
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
+  const prompt = resolveStep(step, t.lessons)
+  const canReplay = tts.supported && !muted
+
+  const [picked, setPicked] = useState<number | null>(null)
+  const [locked, setLocked] = useState(false)
+  const doneRef = useRef(false)
+
+  useEffect(() => {
+    doneRef.current = false
+    setLocked(false)
+    setPicked(null)
+    ttsRef.current.speak(prompt)
+    return () => ttsRef.current.cancel()
+  }, [step.id, prompt])
+
+  const choose = (value: number) => {
+    if (doneRef.current) return
+    const correct = value === step.answer
+    setPicked(value)
+    if (!assessment && !correct) {
+      // Teaching miss: gentle nudge, count a retry, let them pick again.
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+      onRetry?.()
+      window.setTimeout(() => setPicked(null), TRY_AGAIN_MS)
+      return
+    }
+    doneRef.current = true
+    setLocked(true)
+    if (correct) {
+      audio.play(assessment ? 'correct' : 'stepComplete')
+      burst()
+      ttsRef.current.speak(t.lessons.spokenGreat)
+    } else {
+      audio.playTryAgain()
+      ttsRef.current.speak(t.lessons.tryAgain)
+    }
+    window.setTimeout(() => {
+      if (assessment) onAttempt?.(correct)
+      else onComplete()
+    }, correct ? CORRECT_PAUSE_MS : TRY_AGAIN_MS)
+  }
+
+  return (
+    <Card className="items-center text-center">
+      <p className="font-display text-lg text-base-content/70">{prompt}</p>
+      {canReplay && (
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm rounded-full font-display"
+          onClick={() => ttsRef.current.speak(prompt)}
+        >
+          {t.lessons.replay}
+        </button>
+      )}
+      <div className="my-2 font-display text-6xl font-extrabold text-primary">{step.display}</div>
+      <div className="flex flex-wrap justify-center gap-3">
+        {step.options.map((opt) => {
+          const isPicked = picked === opt
+          const variant = isPicked ? (opt === step.answer ? 'success' : 'danger') : 'accent'
+          return (
+            <Button key={opt} variant={variant} size="lg" disabled={locked} onClick={() => choose(opt)}>
+              {opt}
+            </Button>
+          )
+        })}
+      </div>
+      {picked !== null && (
+        <div className={`badge badge-lg font-display mt-1 ${picked === step.answer ? 'badge-success' : 'badge-error'}`}>
+          {picked === step.answer ? '✅' : '❌'}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+/** Placeholder for `count` / `compare` (Unit 1 tap views — deferred). */
 function PromptView({ step, onComplete }: { step: LessonStep; onComplete: () => void }) {
   const t = useStrings()
   const audio = useAudio()

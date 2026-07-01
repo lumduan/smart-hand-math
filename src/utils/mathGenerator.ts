@@ -48,13 +48,21 @@ function tierOf(maxAnswer: number): Difficulty {
 
 // --- per-range builders ---------------------------------------------------
 
-function addition(maxAnswer: number): MathQuestion {
+/**
+ * Addition question with a sum guaranteed `≤ maxAnswer` (so it stays showable
+ * on fingers). Exported for the guided-lessons `solve` steps / assessments.
+ */
+export function generateAddition(maxAnswer: number): MathQuestion {
   const a = randInt(0, maxAnswer)
   const b = randInt(0, maxAnswer - a)
   return { id: newId(), text: `${a} + ${b} = ?`, answer: a + b, op: '+', difficulty: tierOf(maxAnswer) }
 }
 
-function subtraction(maxAnswer: number): MathQuestion {
+/**
+ * Subtraction question with a non-negative result `≤ maxAnswer`. Exported for
+ * the guided-lessons `solve` steps / assessments. Uses U+2212 in `text`.
+ */
+export function generateSubtraction(maxAnswer: number): MathQuestion {
   const a = randInt(0, maxAnswer)
   const b = randInt(0, a)
   return { id: newId(), text: `${a} − ${b} = ?`, answer: a - b, op: '-', difficulty: tierOf(maxAnswer) }
@@ -113,15 +121,15 @@ export function generateQuestion(difficulty: Difficulty = 'easy'): MathQuestion 
   switch (difficulty) {
     case 'easy': {
       const roll = Math.random()
-      if (roll < 0.35) return addition(9)
-      if (roll < 0.70) return subtraction(9)
+      if (roll < 0.35) return generateAddition(9)
+      if (roll < 0.70) return generateSubtraction(9)
       if (roll < 0.85) return multiplication(9)
       return comparison(9)
     }
     case 'medium': {
       const roll = Math.random()
-      if (roll < 0.2) return addition(50)
-      if (roll < 0.4) return subtraction(50)
+      if (roll < 0.2) return generateAddition(50)
+      if (roll < 0.4) return generateSubtraction(50)
       if (roll < 0.58) return multiplication(50)
       if (roll < 0.74) return missingNumber(50)
       if (roll < 0.88) return sequence(50)
@@ -129,8 +137,8 @@ export function generateQuestion(difficulty: Difficulty = 'easy'): MathQuestion 
     }
     case 'hard': {
       const roll = Math.random()
-      if (roll < 0.16) return addition(99)
-      if (roll < 0.32) return subtraction(99)
+      if (roll < 0.16) return generateAddition(99)
+      if (roll < 0.32) return generateSubtraction(99)
       if (roll < 0.48) return multiplication(99)
       if (roll < 0.64) return division(99)
       if (roll < 0.80) return missingNumber(99)
@@ -138,6 +146,6 @@ export function generateQuestion(difficulty: Difficulty = 'easy'): MathQuestion 
       return comparison(99)
     }
     default:
-      return addition(9)
+      return generateAddition(9)
   }
 }
