@@ -57,6 +57,7 @@ export type LessonsAction =
   | { type: 'ASSESS_ANSWER'; correct: boolean }
   | { type: 'EXIT_LESSON' }
   | { type: 'RESET_PROGRESS' }
+  | { type: 'UNLOCK_LESSON'; lessonId: string }
 
 /** Star rating for a finished assessment (RFC-0004). */
 export function starsFor(attempts: number, score: number, questions: number, passed: boolean): Stars {
@@ -157,6 +158,20 @@ export function reducer(state: LessonsState, action: LessonsAction): LessonsStat
     case 'RESET_PROGRESS':
       return initialLessonsState(seedProgress())
 
+    case 'UNLOCK_LESSON': {
+      // Manual unlock (the lessons-list confirm popup). No-op for an unknown id or
+      // one already reachable, so existing stars/progress are never clobbered.
+      const { lessonId } = action
+      if (!LESSON_MAP[lessonId] || isUnlockedStatus(state.progress[lessonId]?.status)) return state
+      return {
+        ...state,
+        progress: {
+          ...state.progress,
+          [lessonId]: { status: 'unlocked', stars: 0, bestAssessment: 0 },
+        },
+      }
+    }
+
     default:
       return state
   }
@@ -218,6 +233,7 @@ interface LessonsApi extends LessonsState {
   assessAnswer: (correct: boolean) => void
   exitLesson: () => void
   resetProgress: () => void
+  unlockLesson: (lessonId: string) => void
   isUnlocked: (lessonId: string) => boolean
 }
 
@@ -241,6 +257,7 @@ export function LessonsProvider({ children }: { children: ReactNode }) {
   const assessAnswer = useCallback((correct: boolean) => dispatch({ type: 'ASSESS_ANSWER', correct }), [])
   const exitLesson = useCallback(() => dispatch({ type: 'EXIT_LESSON' }), [])
   const resetProgress = useCallback(() => dispatch({ type: 'RESET_PROGRESS' }), [])
+  const unlockLesson = useCallback((lessonId: string) => dispatch({ type: 'UNLOCK_LESSON', lessonId }), [])
 
   const value = useMemo<LessonsApi>(
     () => ({
@@ -251,9 +268,10 @@ export function LessonsProvider({ children }: { children: ReactNode }) {
       assessAnswer,
       exitLesson,
       resetProgress,
+      unlockLesson,
       isUnlocked: (id: string) => isUnlockedStatus(state.progress[id]?.status),
     }),
-    [state, startLesson, stepComplete, retryStep, assessAnswer, exitLesson, resetProgress],
+    [state, startLesson, stepComplete, retryStep, assessAnswer, exitLesson, resetProgress, unlockLesson],
   )
 
   return <LessonsContext.Provider value={value}>{children}</LessonsContext.Provider>

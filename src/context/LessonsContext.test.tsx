@@ -174,6 +174,34 @@ describe('reducer — EXIT_LESSON / RESET_PROGRESS', () => {
   })
 })
 
+describe('reducer — UNLOCK_LESSON', () => {
+  it('unlocks a locked lesson', () => {
+    // seedProgress() unlocks only the first lesson; SECOND has no entry → locked.
+    const after = reducer(
+      { progress: seedProgress(), active: null },
+      { type: 'UNLOCK_LESSON', lessonId: SECOND.id },
+    )
+    expect(after.progress[SECOND.id]).toEqual({ status: 'unlocked', stars: 0, bestAssessment: 0 })
+    expect(after.progress[FIRST.id].status).toBe('unlocked') // untouched
+  })
+
+  it('is a no-op for an already-reachable lesson (keeps stars/status)', () => {
+    const progress: Record<string, LessonProgress> = {
+      ...seedProgress(),
+      [SECOND.id]: { status: 'complete', stars: 3, bestAssessment: 5 },
+    }
+    const before = { progress, active: null }
+    const after = reducer(before, { type: 'UNLOCK_LESSON', lessonId: SECOND.id })
+    expect(after).toBe(before) // unchanged reference — no clobber
+  })
+
+  it('is a no-op for an unknown lesson id', () => {
+    const before = { progress: seedProgress(), active: null }
+    const after = reducer(before, { type: 'UNLOCK_LESSON', lessonId: 'does-not-exist' })
+    expect(after).toBe(before)
+  })
+})
+
 describe('useLessons hook', () => {
   it('throws when used outside a LessonsProvider', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation(() => {})

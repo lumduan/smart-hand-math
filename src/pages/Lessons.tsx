@@ -1,6 +1,9 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/common/Card'
+import { Modal } from '@/components/common/Modal'
+import { Button } from '@/components/common/Button'
 import { CURRICULUM } from '@/content/lessons'
 import { useLessons } from '@/context/LessonsContext'
 import { useStrings } from '@/i18n/useStrings'
@@ -8,7 +11,16 @@ import { useStrings } from '@/i18n/useStrings'
 /** Lesson list: cards with title, objective, stars, and lock/start state. */
 export function Lessons() {
   const t = useStrings()
-  const { progress, isUnlocked } = useLessons()
+  const navigate = useNavigate()
+  const { progress, isUnlocked, unlockLesson } = useLessons()
+  // Locked tiles are tappable: tapping one asks to confirm, then unlocks + opens it.
+  const [pendingId, setPendingId] = useState<string | null>(null)
+
+  const confirmUnlock = () => {
+    if (!pendingId) return
+    unlockLesson(pendingId)
+    navigate(`/lessons/${pendingId}`)
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +59,10 @@ export function Lessons() {
                       {complete ? t.lessons.playAgain : t.lessons.start}
                     </Link>
                   ) : (
-                    <button className="btn btn-ghost rounded-full font-display" disabled>
+                    <button
+                      className="btn btn-ghost rounded-full font-display"
+                      onClick={() => setPendingId(lesson.id)}
+                    >
                       {t.lessons.locked}
                     </button>
                   )}
@@ -57,6 +72,28 @@ export function Lessons() {
           )
         })}
       </div>
+
+      <Modal
+        open={pendingId !== null}
+        onClose={() => setPendingId(null)}
+        dismissable={false}
+        title={t.lessons.unlockTitle}
+      >
+        <div className="text-center">
+          <p className="font-display text-xl font-bold text-primary">
+            {pendingId ? t.lessons.titles[pendingId] : ''}
+          </p>
+          <p className="mt-2 text-base-content/70">{t.lessons.unlockBody}</p>
+          <div className="mt-5 flex justify-center gap-3">
+            <Button variant="primary" onClick={confirmUnlock}>
+              {t.lessons.unlockConfirm}
+            </Button>
+            <Button variant="ghost" onClick={() => setPendingId(null)}>
+              {t.lessons.unlockCancel}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
