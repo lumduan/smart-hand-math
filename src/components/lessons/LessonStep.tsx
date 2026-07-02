@@ -114,7 +114,17 @@ function WatchView({ step, onComplete }: { step: Extract<LessonStep, { kind: 'wa
     return () => window.clearTimeout(id)
   }, [step.id, narration, minMs, willSpeak])
 
-  const visual = Array.isArray(step.visual) ? step.visual.join('   ') : step.visual
+  // Worded visuals are localized (`t.lessons.visuals[id]`); pure glyph visuals stay
+  // inline on the step. A missing id is undefined at runtime despite the Record type.
+  const localizedVisual = t.lessons.visuals[step.id]
+  const visual =
+    typeof localizedVisual === 'string'
+      ? localizedVisual
+      : step.visual == null
+        ? ''
+        : Array.isArray(step.visual)
+          ? step.visual.join('   ')
+          : step.visual
 
   return (
     <Card className="items-center text-center">

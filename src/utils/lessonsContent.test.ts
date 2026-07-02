@@ -12,6 +12,21 @@ import { CURRICULUM, LESSON_MAP, type Lesson, type LessonStep } from '@/content/
 
 const L = STRINGS.en.lessons
 
+describe('watch-step visuals', () => {
+  it('every watch step resolves a visual (inline glyph or localized entry)', () => {
+    const missing: string[] = []
+    for (const lesson of CURRICULUM) {
+      for (const step of lesson.steps) {
+        if (step.kind !== 'watch') continue
+        const hasInline = step.visual != null
+        const hasLocalized = typeof L.visuals[step.id] === 'string'
+        if (!hasInline && !hasLocalized) missing.push(step.id)
+      }
+    }
+    expect(missing).toEqual([])
+  })
+})
+
 describe('resolveStep', () => {
   it('returns the per-step narration when one is defined', () => {
     const step = { id: 'cf-watch-1', kind: 'watch', visual: 'x' } as LessonStep

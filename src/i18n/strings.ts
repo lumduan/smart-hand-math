@@ -139,6 +139,22 @@ const lessonSteps: Record<string, string> = {
   'tb-watch-2': 'Taking away big numbers — show the answer on two hands.',
 }
 
+// Worded watch-step visuals — localized (keyed by step id, like the maps above).
+// Pure glyph/number/emoji visuals stay inline on the step in src/content/lessons.ts;
+// only visuals that contain WORDS live here so they translate. WatchView prefers
+// `lessons.visuals[id]` and falls back to the step's inline `visual`.
+const lessonVisuals: Record<string, string> = {
+  'zm-watch-1': '✊ = 0   (none!)',
+  'mf-watch-2': 'more  ·  fewer  ·  same',
+  'mt-watch-2': 'Thumb = 5  ⭐',
+  'am-watch-2': 'Adding makes more ➕',
+  'ta-watch-2': 'Taking away makes fewer ➖',
+  'tao-watch-1': '✋ tens   ·   ✋ ones',
+  'tao-watch-2': 'Left = tens   ·   Right = ones',
+  'ab-watch-2': 'Big adds ➕',
+  'tb-watch-2': 'Big take-aways ➖',
+}
+
 const en = {
   doc: {
     title: 'SmartHand Math ✋🧮',
@@ -312,6 +328,7 @@ const en = {
     titles: lessonTitles,
     objectives: lessonObjectives,
     steps: lessonSteps,
+    visuals: lessonVisuals,
   },
 
   common: {
@@ -457,6 +474,18 @@ const lessonStepsTh: Record<string, string> = {
   'tb-solve-2': 'สามสิบ เอาออกสิบ ชูให้ดูหน่อย!',
   'tb-solve-3': 'สี่สิบห้า เอาออกยี่สิบสาม ชูให้ดูหน่อย!',
   'tb-watch-2': 'ลบจำนวนใหญ่ — ชูคำตอบด้วยสองมือ',
+}
+
+const lessonVisualsTh: Record<string, string> = {
+  'zm-watch-1': '✊ = 0   (ไม่มีเลย!)',
+  'mf-watch-2': 'มากกว่า  ·  น้อยกว่า  ·  เท่ากัน',
+  'mt-watch-2': 'นิ้วโป้ง = 5  ⭐',
+  'am-watch-2': 'บวกแล้วยิ่งมากขึ้น ➕',
+  'ta-watch-2': 'ลบแล้วยิ่งน้อยลง ➖',
+  'tao-watch-1': '✋ หลักสิบ   ·   ✋ หลักหน่วย',
+  'tao-watch-2': 'ซ้าย = หลักสิบ   ·   ขวา = หลักหน่วย',
+  'ab-watch-2': 'บวกจำนวนใหญ่ ➕',
+  'tb-watch-2': 'ลบจำนวนใหญ่ ➖',
 }
 
 const th: Strings = {
@@ -626,6 +655,7 @@ const th: Strings = {
     titles: lessonTitlesTh,
     objectives: lessonObjectivesTh,
     steps: lessonStepsTh,
+    visuals: lessonVisualsTh,
   },
 
   common: {

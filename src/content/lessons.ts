@@ -31,8 +31,12 @@ interface BaseStep {
 /** Narrated demo. No input; auto-advance OR a Next button (Phase A: Next, no TTS yet). */
 export interface WatchStep extends BaseStep {
   kind: 'watch'
-  /** Big centered glyph(s): '1 + 1 = 2', '✋', or a row to display. */
-  visual: string | readonly string[]
+  /**
+   * Big centered visual under the narration — universal glyphs/numbers/emoji
+   * only (e.g. '1 + 1 = 2', '👍 = 5'). WORDED visuals are localized instead via
+   * `t.lessons.visuals[id]` (src/i18n/strings.ts); such steps omit `visual`.
+   */
+  visual?: string | readonly string[]
   autoAdvance?: boolean
   /** Min ms the visual stays before Next enables, regardless of narration. */
   minDurationMs?: number
@@ -174,7 +178,7 @@ export const CURRICULUM: readonly Lesson[] = [
         answer: 'fewer',
       },
       { id: 'mf-choose-1', kind: 'choose', display: '2   or   4', options: [2, 4], answer: 4 },
-      { id: 'mf-watch-2', kind: 'watch', visual: 'more  ·  fewer  ·  same' },
+      { id: 'mf-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -188,7 +192,7 @@ export const CURRICULUM: readonly Lesson[] = [
     order: 3,
     targetNumbers: [0, 1],
     steps: [
-      { id: 'zm-watch-1', kind: 'watch', visual: '✊ = 0   (none!)' },
+      { id: 'zm-watch-1', kind: 'watch' },
       { id: 'zm-count-0', kind: 'count', object: '🍪', count: 0 },
       { id: 'zm-show-0', kind: 'showMe', target: 0, numHands: 1 },
       { id: 'zm-choose-0', kind: 'choose', display: '🍽️', options: [0, 1], answer: 0 },
@@ -228,7 +232,7 @@ export const CURRICULUM: readonly Lesson[] = [
     steps: [
       { id: 'mt-watch-1', kind: 'watch', visual: '👍 = 5' },
       { id: 'mt-show-5', kind: 'showMe', target: 5, numHands: 1 },
-      { id: 'mt-watch-2', kind: 'watch', visual: 'Thumb = 5  ⭐' },
+      { id: 'mt-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -250,7 +254,7 @@ export const CURRICULUM: readonly Lesson[] = [
       { id: 'fm-show-7', kind: 'showMe', target: 7, numHands: 1 },
       { id: 'fm-show-8', kind: 'showMe', target: 8, numHands: 1 },
       { id: 'fm-show-9', kind: 'showMe', target: 9, numHands: 1 },
-      { id: 'fm-watch-2', kind: 'watch', visual: '6  7  8  9   ✋' },
+      { id: 'fm-watch-2', kind: 'watch', visual: '6  7  8  9   👏' },
     ],
     assessment: {
       questions: 5,
@@ -289,7 +293,7 @@ export const CURRICULUM: readonly Lesson[] = [
       { id: 'am-solve-1', kind: 'solve', display: '1 + 1 = ?', answer: 2, numHands: 1 },
       { id: 'am-solve-2', kind: 'solve', display: '3 + 1 = ?', answer: 4, numHands: 1 },
       { id: 'am-solve-3', kind: 'solve', display: '2 + 2 = ?', answer: 4, numHands: 1 },
-      { id: 'am-watch-2', kind: 'watch', visual: 'Adding makes more ➕' },
+      { id: 'am-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -345,7 +349,7 @@ export const CURRICULUM: readonly Lesson[] = [
       { id: 'ta-solve-1', kind: 'solve', display: '3 − 1 = ?', answer: 2, numHands: 1 },
       { id: 'ta-solve-2', kind: 'solve', display: '4 − 1 = ?', answer: 3, numHands: 1 },
       { id: 'ta-solve-3', kind: 'solve', display: '5 − 2 = ?', answer: 3, numHands: 1 },
-      { id: 'ta-watch-2', kind: 'watch', visual: 'Taking away makes fewer ➖' },
+      { id: 'ta-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -397,11 +401,11 @@ export const CURRICULUM: readonly Lesson[] = [
     order: 14,
     targetNumbers: [10, 12, 20],
     steps: [
-      { id: 'tao-watch-1', kind: 'watch', visual: '✋ tens   ·   ✋ ones' },
+      { id: 'tao-watch-1', kind: 'watch' },
       { id: 'tao-show-10', kind: 'showMe', target: 10, numHands: 2 },
       { id: 'tao-show-12', kind: 'showMe', target: 12, numHands: 2 },
       { id: 'tao-show-20', kind: 'showMe', target: 20, numHands: 2 },
-      { id: 'tao-watch-2', kind: 'watch', visual: 'Left = tens   ·   Right = ones' },
+      { id: 'tao-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -437,7 +441,7 @@ export const CURRICULUM: readonly Lesson[] = [
       { id: 'ab-solve-1', kind: 'solve', display: '10 + 5 = ?', answer: 15, numHands: 2 },
       { id: 'ab-solve-2', kind: 'solve', display: '20 + 13 = ?', answer: 33, numHands: 2 },
       { id: 'ab-solve-3', kind: 'solve', display: '30 + 25 = ?', answer: 55, numHands: 2 },
-      { id: 'ab-watch-2', kind: 'watch', visual: 'Big adds ➕' },
+      { id: 'ab-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
@@ -455,7 +459,7 @@ export const CURRICULUM: readonly Lesson[] = [
       { id: 'tb-solve-1', kind: 'solve', display: '15 − 5 = ?', answer: 10, numHands: 2 },
       { id: 'tb-solve-2', kind: 'solve', display: '30 − 10 = ?', answer: 20, numHands: 2 },
       { id: 'tb-solve-3', kind: 'solve', display: '45 − 23 = ?', answer: 22, numHands: 2 },
-      { id: 'tb-watch-2', kind: 'watch', visual: 'Big take-aways ➖' },
+      { id: 'tb-watch-2', kind: 'watch' },
     ],
     assessment: {
       questions: 5,
