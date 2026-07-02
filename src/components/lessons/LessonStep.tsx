@@ -18,6 +18,9 @@ import type { LessonStep } from '@/content/lessons'
 const WATCH_MIN_MS = 2500 // a `watch` visual shows at least this long before Next enables
 const LESSON_PROMPT_MS = 1000 // T1: hold the value steady this long → ring appears
 const LESSON_CONFIRM_MS = 800 // T2: keep holding → commit
+// Two-hand (0–99) holds are wobblier for small kids — give the pose more time.
+const LESSON_PROMPT_MS_2H = 1400
+const LESSON_CONFIRM_MS_2H = 1200
 const CORRECT_PAUSE_MS = 900 // show the green tick before advancing
 const TRY_AGAIN_MS = 1200 // show the red cross (assessment miss) before advancing
 // When narration IS spoken, Next normally enables on the speech's `onend`. This
@@ -224,8 +227,8 @@ function FingerAnswerView({
   // Teaching: the hold only arms on the correct value. Assessment: any value grades.
   const pending = useAutoSubmit({
     enabled: true,
-    promptMs: step.promptMs ?? LESSON_PROMPT_MS,
-    confirmMs: step.confirmMs ?? LESSON_CONFIRM_MS,
+    promptMs: step.promptMs ?? (numHands === 2 ? LESSON_PROMPT_MS_2H : LESSON_PROMPT_MS),
+    confirmMs: step.confirmMs ?? (numHands === 2 ? LESSON_CONFIRM_MS_2H : LESSON_CONFIRM_MS),
     detected,
     canSubmit: !doneRef.current && (assessment ? detected >= 0 : detected === expected),
     questionId: step.id,
@@ -276,7 +279,9 @@ function FingerAnswerView({
         )}
       </Card>
 
-      <CameraView digitMode numHands={numHands} onNumberChange={setDetected} />
+      {/* One-hand steps read a handedness-independent digit (0–9); two-hand steps
+          read place value (0–99) via handsToNumber, so digitMode is off there. */}
+      <CameraView digitMode={numHands === 1} numHands={numHands} onNumberChange={setDetected} />
 
       <NumberPad
         key={step.id}

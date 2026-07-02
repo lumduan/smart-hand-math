@@ -56,16 +56,16 @@ export function buildAssessmentStep(lesson: Lesson, index: number): AssessmentSt
     }
     case 'addition': {
       const q = generateAddition(gen.maxAnswer)
-      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: gen.numHands ?? 1 }
     }
     case 'subtraction': {
       const q = generateSubtraction(gen.maxAnswer)
-      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: gen.numHands ?? 1 }
     }
     case 'mixed': {
       const op = gen.ops[randInt(0, gen.ops.length - 1)]
       const q = op === '+' ? generateAddition(gen.maxAnswer) : generateSubtraction(gen.maxAnswer)
-      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: 1 }
+      return { id, kind: 'solve', display: q.text, answer: q.answer, numHands: gen.numHands ?? 1 }
     }
     case 'count': {
       const min = Math.min(gen.minCount ?? 0, gen.maxCount)

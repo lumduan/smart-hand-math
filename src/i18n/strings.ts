@@ -29,6 +29,10 @@ const lessonTitles: Record<string, string> = {
   'taking-away': 'Taking away',
   'how-many-left': 'How many are left?',
   'bigger-take-aways': 'Bigger take-aways',
+  'tens-and-ones': 'Tens and ones',
+  'all-the-way-to-99': 'All the way to 99',
+  'adding-big': 'Adding big numbers',
+  'taking-from-big': 'Taking away big numbers',
 }
 
 const lessonObjectives: Record<string, string> = {
@@ -45,6 +49,10 @@ const lessonObjectives: Record<string, string> = {
   'taking-away': 'Take away 1 and 2 — count back.',
   'how-many-left': 'Subtract within 5. How many are left?',
   'bigger-take-aways': 'Take away bigger numbers, up to 9.',
+  'tens-and-ones': 'Use two hands — left for tens, right for ones.',
+  'all-the-way-to-99': 'Show any number from 0 to 99 with two hands.',
+  'adding-big': 'Add bigger numbers, all the way to 99.',
+  'taking-from-big': 'Take away bigger numbers, all the way to 99.',
 }
 
 // Per-step narration. `watch` steps need an entry; other kinds fall back to a
@@ -111,6 +119,22 @@ const lessonSteps: Record<string, string> = {
   'bt-solve-2': 'Eight, take away three. Show me!',
   'bt-solve-3': 'Seven, take away five. Show me!',
   'bt-solve-4': 'Nine, take away nine. Show me zero!',
+
+  // Unit 5 — two-hand place value 0–99 (showMe steps use "Show me N!").
+  'tao-watch-1': 'Now use BOTH hands! Your LEFT hand counts tens, your right hand counts ones.',
+  'tao-watch-2': 'Left hand is tens, right hand is ones — two hands make bigger numbers!',
+  'atw-watch-1': 'Four on the left and seven on the right makes forty-seven!',
+  'atw-watch-2': 'You can show every number, all the way to ninety-nine!',
+  'ab-watch-1': 'Ten and five more is fifteen. Show it with two hands!',
+  'ab-solve-1': 'Ten, and five more. Show me with two hands!',
+  'ab-solve-2': 'Twenty, and thirteen more. Show me!',
+  'ab-solve-3': 'Thirty, and twenty-five more. Show me!',
+  'ab-watch-2': 'Adding big numbers — use both hands for the answer.',
+  'tb-watch-1': 'Fifteen take away five leaves ten. Show it with two hands!',
+  'tb-solve-1': 'Fifteen, take away five. Show me with two hands!',
+  'tb-solve-2': 'Thirty, take away ten. Show me!',
+  'tb-solve-3': 'Forty-five, take away twenty-three. Show me!',
+  'tb-watch-2': 'Taking away big numbers — show the answer on two hands.',
 }
 
 const en = {

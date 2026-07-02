@@ -20,7 +20,7 @@
 export type LessonStepKind = 'watch' | 'showMe' | 'count' | 'choose' | 'compare' | 'solve'
 
 /** Coarse grouping for the list UI; ordering/unlocks come from `CURRICULUM`. */
-export type LessonUnit = 'number-sense' | 'soroban-0-9' | 'addition' | 'subtraction'
+export type LessonUnit = 'number-sense' | 'soroban-0-9' | 'addition' | 'subtraction' | 'place-value'
 
 interface BaseStep {
   /** Stable id — also the i18n key (`t.lessons.steps[id]`) + the `useAutoSubmit` reset key. */
@@ -98,9 +98,9 @@ export type AssessmentStep = ShowMeStep | SolveStep | CountStep | CompareStep
 /** How a lesson's quick-check questions are generated. */
 export type AssessmentGenerator =
   | { kind: 'showMe'; minAnswer?: number; maxAnswer: number; numHands?: 1 | 2 }
-  | { kind: 'addition'; maxAnswer: number }
-  | { kind: 'subtraction'; maxAnswer: number }
-  | { kind: 'mixed'; ops: readonly ('+' | '-')[]; maxAnswer: number }
+  | { kind: 'addition'; maxAnswer: number; numHands?: 1 | 2 }
+  | { kind: 'subtraction'; maxAnswer: number; numHands?: 1 | 2 }
+  | { kind: 'mixed'; ops: readonly ('+' | '-')[]; maxAnswer: number; numHands?: 1 | 2 }
   | { kind: 'count'; minCount?: number; maxCount: number }
   | { kind: 'compare'; minCount?: number; maxCount: number }
 
@@ -387,6 +387,80 @@ export const CURRICULUM: readonly Lesson[] = [
       questions: 5,
       passThreshold: 4,
       generator: { kind: 'subtraction', maxAnswer: 9 },
+    },
+  },
+
+  // --- Unit 5: Big Numbers (two-hand place value 0–99) — left hand = tens, right = ones ---
+  {
+    id: 'tens-and-ones',
+    unit: 'place-value',
+    order: 14,
+    targetNumbers: [10, 12, 20],
+    steps: [
+      { id: 'tao-watch-1', kind: 'watch', visual: '✋ tens   ·   ✋ ones' },
+      { id: 'tao-show-10', kind: 'showMe', target: 10, numHands: 2 },
+      { id: 'tao-show-12', kind: 'showMe', target: 12, numHands: 2 },
+      { id: 'tao-show-20', kind: 'showMe', target: 20, numHands: 2 },
+      { id: 'tao-watch-2', kind: 'watch', visual: 'Left = tens   ·   Right = ones' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'showMe', minAnswer: 10, maxAnswer: 29, numHands: 2 },
+    },
+  },
+  {
+    id: 'all-the-way-to-99',
+    unit: 'place-value',
+    order: 15,
+    targetNumbers: [35, 58, 91],
+    steps: [
+      { id: 'atw-watch-1', kind: 'watch', visual: '4  7   =   47' },
+      { id: 'atw-show-35', kind: 'showMe', target: 35, numHands: 2 },
+      { id: 'atw-show-58', kind: 'showMe', target: 58, numHands: 2 },
+      { id: 'atw-show-91', kind: 'showMe', target: 91, numHands: 2 },
+      { id: 'atw-watch-2', kind: 'watch', visual: '0 … 99   🙌' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'showMe', minAnswer: 10, maxAnswer: 99, numHands: 2 },
+    },
+  },
+  {
+    id: 'adding-big',
+    unit: 'place-value',
+    order: 16,
+    targetNumbers: [15, 33, 55],
+    steps: [
+      { id: 'ab-watch-1', kind: 'watch', visual: '10 + 5 = 15' },
+      { id: 'ab-solve-1', kind: 'solve', display: '10 + 5 = ?', answer: 15, numHands: 2 },
+      { id: 'ab-solve-2', kind: 'solve', display: '20 + 13 = ?', answer: 33, numHands: 2 },
+      { id: 'ab-solve-3', kind: 'solve', display: '30 + 25 = ?', answer: 55, numHands: 2 },
+      { id: 'ab-watch-2', kind: 'watch', visual: 'Big adds ➕' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'addition', maxAnswer: 99, numHands: 2 },
+    },
+  },
+  {
+    id: 'taking-from-big',
+    unit: 'place-value',
+    order: 17,
+    targetNumbers: [10, 20, 22],
+    steps: [
+      { id: 'tb-watch-1', kind: 'watch', visual: '15 − 5 = 10' },
+      { id: 'tb-solve-1', kind: 'solve', display: '15 − 5 = ?', answer: 10, numHands: 2 },
+      { id: 'tb-solve-2', kind: 'solve', display: '30 − 10 = ?', answer: 20, numHands: 2 },
+      { id: 'tb-solve-3', kind: 'solve', display: '45 − 23 = ?', answer: 22, numHands: 2 },
+      { id: 'tb-watch-2', kind: 'watch', visual: 'Big take-aways ➖' },
+    ],
+    assessment: {
+      questions: 5,
+      passThreshold: 4,
+      generator: { kind: 'subtraction', maxAnswer: 99, numHands: 2 },
     },
   },
 ] as const

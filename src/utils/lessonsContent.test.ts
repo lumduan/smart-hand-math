@@ -144,6 +144,20 @@ describe('buildAssessmentStep', () => {
     if (p.kind !== 'compare') throw new Error('expected compare')
     expect(p.left.count).toBeGreaterThanOrEqual(0)
   })
+
+  it('carries numHands:2 onto arithmetic solve steps (two-hand 0–99)', () => {
+    const add = buildAssessmentStep(withGen({ kind: 'addition', maxAnswer: 99, numHands: 2 }), 0)
+    if (add.kind !== 'solve') throw new Error('expected solve')
+    expect(add.numHands).toBe(2)
+    expect(add.answer).toBeGreaterThanOrEqual(0)
+    expect(add.answer).toBeLessThanOrEqual(99)
+
+    const sub = buildAssessmentStep(withGen({ kind: 'subtraction', maxAnswer: 99, numHands: 2 }), 0)
+    if (sub.kind !== 'solve') throw new Error('expected solve')
+    expect(sub.numHands).toBe(2)
+    expect(sub.answer).toBeGreaterThanOrEqual(0)
+    expect(sub.answer).toBeLessThanOrEqual(99)
+  })
 })
 
 describe('compareAnswer', () => {

@@ -114,3 +114,30 @@ describe('LessonStep — CompareView', () => {
     expect(onComplete).toHaveBeenCalledOnce()
   })
 })
+
+// Two-hand solve (0–99). CameraView is mocked out, so the number-pad is the input path.
+const solveStep2H: Step = { id: 't-solve-2h', kind: 'solve', display: '20 + 13 = ?', answer: 33, numHands: 2 }
+
+describe('LessonStep — FingerAnswerView (two-hand solve via pad)', () => {
+  beforeEach(() => vi.useFakeTimers())
+  afterEach(() => vi.useRealTimers())
+
+  it('accepts a typed two-digit answer (pad max 99) and grades it correct', () => {
+    const { onComplete } = renderStep(solveStep2H)
+    const input = screen.getByRole('spinbutton')
+    expect(input).toHaveAttribute('max', '99') // numHands:2 → 0–99 pad
+    fireEvent.change(input, { target: { value: '33' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    act(() => vi.advanceTimersByTime(1000))
+    expect(onComplete).toHaveBeenCalledOnce()
+  })
+
+  it('a wrong typed answer during teaching counts a retry, not completion', () => {
+    const { onComplete, onRetry } = renderStep(solveStep2H)
+    const input = screen.getByRole('spinbutton')
+    fireEvent.change(input, { target: { value: '40' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Check' }))
+    expect(onRetry).toHaveBeenCalledOnce()
+    expect(onComplete).not.toHaveBeenCalled()
+  })
+})
