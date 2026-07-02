@@ -245,7 +245,7 @@ export const CURRICULUM: readonly Lesson[] = [
     order: 6,
     targetNumbers: [6, 7, 8, 9],
     steps: [
-      { id: 'fm-watch-1', kind: 'watch', visual: '🖐️ + ☝️ = 6' },
+      { id: 'fm-watch-1', kind: 'watch', visual: '👍 + ☝️ = 6' },
       { id: 'fm-show-6', kind: 'showMe', target: 6, numHands: 1 },
       { id: 'fm-show-7', kind: 'showMe', target: 7, numHands: 1 },
       { id: 'fm-show-8', kind: 'showMe', target: 8, numHands: 1 },
