@@ -104,6 +104,25 @@ describe('useTts — supported environment', () => {
     expect(state.spoken[0].voice).toMatchObject({ name: 'Local EN', localService: true })
   })
 
+  it('under a Thai locale, picks a Thai voice and sets th-TH lang', () => {
+    synth.getVoices = vi.fn(() => [
+      { lang: 'en-US', localService: true, name: 'EN', default: true, voiceURI: 'en' },
+      { lang: 'th-TH', localService: true, name: 'TH', default: false, voiceURI: 'th' },
+    ])
+    localStorage.setItem('smartmath.settings', JSON.stringify({ locale: 'th', volume: 0.6 }))
+    const { result } = renderHook(() => useTts(), { wrapper: AppSettingsProvider })
+    expect(result.current.hasVoices).toBe(true)
+    act(() => result.current.speak('สวัสดี'))
+    expect(state.spoken[0].lang).toBe('th-TH')
+    expect(state.spoken[0].voice).toMatchObject({ lang: 'th-TH' })
+  })
+
+  it('under a Thai locale with no Thai voice, hasVoices is false (text fallback)', () => {
+    localStorage.setItem('smartmath.settings', JSON.stringify({ locale: 'th', volume: 0.6 }))
+    const { result } = renderHook(() => useTts(), { wrapper: AppSettingsProvider })
+    expect(result.current.hasVoices).toBe(false) // only en voices stubbed → no th match
+  })
+
   it('respects a per-call rate/pitch override', () => {
     const { result } = renderHook(() => useTts(), { wrapper: AppSettingsProvider })
     act(() => result.current.speak('slow', { rate: 0.5, pitch: 1.5 }))

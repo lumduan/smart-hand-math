@@ -6,8 +6,9 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        // "Baloo 2" loaded in index.html; falls back to rounded system fonts
-        display: ['"Baloo 2"', 'system-ui', 'sans-serif'],
+        // Self-hosted in main.tsx: "Baloo 2" (Latin) → "Mitr" (Thai glyphs Baloo 2
+        // lacks) → rounded system fonts.
+        display: ['"Baloo 2"', '"Mitr"', 'system-ui', 'sans-serif'],
       },
       keyframes: {
         pop: {

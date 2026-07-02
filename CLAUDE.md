@@ -343,8 +343,10 @@ Phase 1 is English-only, **but strings must never be inlined in components.**
 - When Thai is added, no component code should change — only data.
 
 > ✅ **Current state:** all user-facing strings are centralized in
-> `src/i18n/strings.ts` and consumed via `useStrings()` (Phase 4). Adding Thai
-> is now a data-only change (see [§15](#15-implementation-status-vs-this-blueprint)).
+> `src/i18n/strings.ts` and consumed via `useStrings()` (Phase 4). **Thai (`th`)
+> is fully translated** (Phase 8.4) — rendered in the Mitr Thai display font and
+> narrated by the device's Thai TTS voice. Adding further languages remains a
+> data-only change (see [§15](#15-implementation-status-vs-this-blueprint)).
 
 ---
 
@@ -504,7 +506,7 @@ these migrations:
 | Handedness/mirror | Single-toggle correction (§4.5) | ✅ `INVERT_HANDEDNESS` + `anatomicalHand` | ✅ Verified on real hardware — `false` ([ADR-0005](docs/plans/adr/ADR-0005-handedness-default.md)); flip if a new device shows wrong hand = tens. |
 | Animation | **`framer-motion`** | ✅ `framer-motion` + `canvas-confetti` ([animations/README](docs/plans/animations/README.md)) | — |
 | DaisyUI theme | `cupcake` / `pastel` | ✅ `cupcake` ([ADR-0006](docs/plans/adr/ADR-0006-daisyui-cupcake-theme.md)) | — |
-| i18n | Centralized string dictionary (§7) | ✅ `src/i18n/strings.ts` + `useStrings()`; persisted `locale` (en/th stub) | — |
+| i18n | Centralized string dictionary (§7) | ✅ `src/i18n/strings.ts` + `useStrings()`; persisted `locale`; **full `en` + `th`** (Thai: Mitr font + device TTS, Phase 8.4) | — |
 | Audio | `howler.js` | ✅ Synthesized Web Audio ([ADR-0007](docs/plans/adr/ADR-0007-web-audio-synthesis.md); Howler + mp3 removed) | — |
 
 > When you complete any row above, flip its state to ✅ in this table.

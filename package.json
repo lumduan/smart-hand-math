@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@fontsource/baloo-2": "^5.2.7",
+    "@fontsource/mitr": "^5.2.8",
     "@mediapipe/tasks-vision": "^0.10.18",
     "canvas-confetti": "^1.9.4",
     "framer-motion": "^12.42.0",

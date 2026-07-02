@@ -148,7 +148,7 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 - [x] Extract all inlined strings → `src/i18n/strings.ts` (typed dictionary)
 - [x] `useStrings()` hook + locale context
 - [x] Active locale persisted in `localStorage`
-- [x] English (`en`) 100% complete; `th` structure stubbed (Thai data is Phase 8)
+- [x] English (`en`) 100% complete; `th` full Thai translation shipped in Phase 8.4 (Mitr font + Thai TTS)
 
 **Exit criteria:** no user-facing string remains inline; locale switch works for `en`; adding `th` is data-only.
 
@@ -242,7 +242,7 @@ A guided, spoken, mastery-gated **Lessons** surface (`/lessons`, `/lessons/:id`)
 - **Delivered:** 17 lessons across 5 units — Unit 1 number-sense (count/compare/zero), Unit 2 Soroban digits 0–9, Units 3–4 addition/subtraction within 9, Unit 5 two-hand place value + arithmetic to 99.
 - **Architecture:** data-only `CURRICULUM` (`src/content/lessons.ts`) + `LessonsContext` (`localStorage['smartmath.lessons']`, sequential unlock, gentle 4/5 stars); browser-TTS narration (`useTts`) for pre-readers; `CameraView.digitMode` (1-hand 0–9 vs 2-hand 0–99 place value); on-the-fly assessment generators (no consecutive repeats); app-wide `ErrorBoundary`.
 - **Reuse (no new CV pipeline):** `fingerMathLogic`, `mathGenerator`, `CameraView`, `useAutoSubmit`, `useAudio`, confetti.
-- **Status:** ✅ SHIPPED (Phases A–D). Deferred follow-on: real Thai translation of the lesson prose (data-only, §8.4).
+- **Status:** ✅ SHIPPED (Phases A–D). Follow-on: real Thai translation of the lesson prose ✅ shipped in §8.4.
 
 **Exit criteria:** ✅ full 5-unit track playable end-to-end; progress/stars/unlock persist under `smartmath.lessons`; lint/typecheck/build + tests green.
 
@@ -250,8 +250,8 @@ A guided, spoken, mastery-gated **Lessons** surface (`/lessons`, `/lessons/:id`)
 
 - [ ] Parent/teacher dashboard (local-only progress + analytics)
 - [ ] Classroom / multi-profile mode
-- [ ] Thai (and more) i18n content
-- [ ] TTS spoken instructions for pre-readers
+- [x] Thai i18n content — **shipped (Thai first)** in 8.4: full `th` translation + Mitr Thai display font + device Thai TTS voice ([thai-i18n](./thai-i18n/README.md)); further languages later
+- [x] ~~TTS spoken instructions for pre-readers~~ — **shipped** in 8.3 (browser SpeechSynthesis via `useTts`)
 - [ ] Additional gesture sets / sign-language mode
 - [ ] Local multiplayer / classroom leaderboard
 
@@ -301,7 +301,7 @@ Phase 0 (Bootstrap)
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
   - Phase 2 (Core Engine Verification & Quality) — vitest + jsdom + RTL (114 tests); finger-logic / math-generator / component / context tests; `src/utils` coverage gate met; `test` wired into CI; hardware-verified handedness default (`INVERT_HANDEDNESS = false`, ADR-0005)
   - Phase 3 (UX Polish & Design System) — React 19; DaisyUI `cupcake` theme (ADR-0006); `framer-motion` + `canvas-confetti` animations; synthesized Web Audio SFX (ADR-0007, Howler removed); onboarding/privacy banner. 118 tests green.
-  - Phase 4 (Internationalization) — all strings centralized in `src/i18n/strings.ts` (typed); `useStrings()` + `useDocumentMeta()`; persisted `locale` + EN/TH switcher; `th` stubbed (Phase 8 fills Thai). 126 tests green.
+  - Phase 4 (Internationalization) — all strings centralized in `src/i18n/strings.ts` (typed); `useStrings()` + `useDocumentMeta()`; persisted `locale` + EN/TH switcher; `th` was stubbed here, then fully translated in Phase 8.4. 126 tests green.
   - Phase 5 (Game Depth & Content) — Endless/Timed/Missions modes (Missions → win); sequences + comparison + division question types; win condition + `TIME_UP` (wires the Timer); level-up confetti + mission progress; adaptive-difficulty RFC-0002. 133 tests green.
   - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
   - Phase 7 (Distribution & Release) — hardened non-root nginx (gzip/cache/security headers + healthcheck); tag-driven GHCR `release.yml`; v1.0.0 + CHANGELOG/RELEASING/dependabot; README refresh. Published v1.0.0.

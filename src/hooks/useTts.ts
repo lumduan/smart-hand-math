@@ -54,7 +54,7 @@ function getSynth(): SpeechSynthesis | null {
  * global mute/volume from AppSettingsContext: muting cancels any in-flight speech.
  */
 export function useTts(): Tts {
-  const { volume, muted } = useAppSettings()
+  const { volume, muted, locale } = useAppSettings()
   const [supported] = useState(detectSupport)
   const [speaking, setSpeaking] = useState(false)
   const [hasVoices, setHasVoices] = useState(false)
@@ -67,8 +67,10 @@ export function useTts(): Tts {
   // being re-created on every volume/mute change.
   const volumeRef = useRef(volume)
   const mutedRef = useRef(muted)
+  const localeRef = useRef(locale)
   volumeRef.current = volume
   mutedRef.current = muted
+  localeRef.current = locale
 
   const clearResumeTimer = useCallback(() => {
     if (resumeTimerRef.current !== null) {
@@ -95,27 +97,26 @@ export function useTts(): Tts {
     getSynth()?.cancel()
   }, [clearResumeTimer, detachCurrent])
 
-  // Pick an English, on-device voice once the list is populated (getVoices() is
-  // frequently empty until the async 'voiceschanged' event fires).
+  // Pick an on-device voice for the ACTIVE LOCALE once the list is populated
+  // (getVoices() is frequently empty until the async 'voiceschanged' event fires).
+  // Re-picks on locale change so Thai gets a Thai voice.
   useEffect(() => {
     const synth = getSynth()
     if (!supported || !synth) return
+    const prefix = locale === 'th' ? 'th' : 'en'
     const pick = () => {
       const voices = synth.getVoices()
       if (!voices.length) return
-      const english = voices.filter((v) => v.lang.toLowerCase().startsWith('en'))
-      voiceRef.current =
-        english.find((v) => v.localService) ??
-        english[0] ??
-        voices.find((v) => v.localService) ??
-        voices[0] ??
-        null
-      setHasVoices(true)
+      const matching = voices.filter((v) => v.lang.toLowerCase().startsWith(prefix))
+      voiceRef.current = matching.find((v) => v.localService) ?? matching[0] ?? null
+      // Locale-specific: no matching voice → text-only fallback (never read e.g.
+      // Thai text through an English voice).
+      setHasVoices(matching.length > 0)
     }
     pick()
     synth.addEventListener('voiceschanged', pick)
     return () => synth.removeEventListener('voiceschanged', pick)
-  }, [supported])
+  }, [supported, locale])
 
   const speak = useCallback(
     (text: string, opts?: SpeakOptions) => {
@@ -129,7 +130,7 @@ export function useTts(): Tts {
       utter.rate = opts?.rate ?? DEFAULT_RATE
       utter.pitch = opts?.pitch ?? DEFAULT_PITCH
       utter.volume = Math.min(1, Math.max(0, volumeRef.current))
-      utter.lang = 'en-US'
+      utter.lang = localeRef.current === 'th' ? 'th-TH' : 'en-US'
       if (voiceRef.current) utter.voice = voiceRef.current
 
       utter.onend = () => {

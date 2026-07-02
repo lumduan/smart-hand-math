@@ -3,8 +3,10 @@
  *
  * Every translatable string lives here; components read it via `useStrings()`.
  * Adding a language is a DATA-ONLY change: add a new locale to `STRINGS` typed
- * `Strings` (the type enforces key parity). Thai (`th`) is currently a structural
- * stub that mirrors `en`; real Thai copy arrives in Phase 8.
+ * `Strings` (the type enforces key + interpolation-param parity). `en` is the
+ * reference locale; `th` is a full Thai translation (Phase 8.4). `en` is
+ * intentionally NOT `as const` so sibling locales may hold different string
+ * values while `Strings` still requires identical keys and function signatures.
  *
  * NOTE: mathematical notation (`+`, `−` U+2212, `×` U+00D7, `?`, `=`) and
  * digits/emoji are universal and stay code-side (in `mathGenerator.ts`), not
@@ -319,18 +321,323 @@ const en = {
     errorBody: "Let's start fresh — tap the button to reload the page.",
     errorReload: '🔄 Start over',
   },
-} as const
+}
 
+// Shape of a complete locale. Derived from `en` (the reference); because `en` is
+// not `as const`, string props widen to `string`, so `th` may differ in value
+// while every key + function signature must still match (compile-enforced).
 export type Strings = typeof en
 
-/** Supported locales. `th` is a structural stub (= `en`) until Phase 8. */
+/** Supported locales. `en` is the reference; `th` is a full translation. */
 export type Locale = 'en' | 'th'
 
-export const STRINGS: Record<Locale, Strings> = {
-  en,
-  // Phase 8: replace this stub with a real Thai translation (typed `Strings`).
-  th: en,
+// ===========================================================================
+// Thai (`th`) — full translation (Phase 8.4). Warm, child-appropriate register
+// for 5–6-year-olds; the child is addressed as "หนู". Math glyphs / digits /
+// emoji stay code-side (untouched). Keyed prose mirrors the English maps above
+// key-for-key (the parity test recurses into these Records). Rendered in Mitr
+// (the Thai fallback in the `display` font stack); TTS reads it with the
+// device's Thai voice (see src/hooks/useTts.ts).
+// ===========================================================================
+
+const lessonTitlesTh: Record<string, string> = {
+  'how-many': 'มีกี่อัน?',
+  'more-or-fewer': 'มากกว่าหรือน้อยกว่า?',
+  'zero-means-none': 'ศูนย์แปลว่าไม่มี',
+  'counting-fingers': 'นิ้วนับเลขของหนู',
+  'magic-thumb': 'นิ้วโป้งวิเศษ',
+  'five-and-more': 'ห้าและมากกว่า',
+  'all-the-numbers': 'ครบทุกจำนวน',
+  'adding-is-more': 'บวกคือเพิ่มขึ้น',
+  'part-and-whole': 'ส่วนย่อยและทั้งหมด',
+  'bigger-adds': 'บวกให้มากขึ้น',
+  'taking-away': 'การเอาออก',
+  'how-many-left': 'เหลือกี่อัน?',
+  'bigger-take-aways': 'ลบจำนวนที่มากขึ้น',
+  'tens-and-ones': 'หลักสิบและหลักหน่วย',
+  'all-the-way-to-99': 'ไปจนถึง 99',
+  'adding-big': 'บวกจำนวนใหญ่',
+  'taking-from-big': 'ลบจำนวนใหญ่',
 }
+
+const lessonObjectivesTh: Record<string, string> = {
+  'how-many': 'นับสิ่งของแล้วบอกว่ามีทั้งหมดกี่อัน',
+  'more-or-fewer': 'เปรียบเทียบสองกลุ่ม — กลุ่มไหนมีมากกว่ากัน?',
+  'zero-means-none': 'ศูนย์แปลว่าไม่มี — มือเปล่าคือ 0',
+  'counting-fingers': 'หัดชู 1, 2, 3 และ 4 ด้วยนิ้วมือ',
+  'magic-thumb': 'มารู้จักนิ้วโป้งที่มีค่าเท่ากับห้า',
+  'five-and-more': 'ทำ 6, 7, 8 และ 9 — ห้าบวกอีกไม่กี่นิ้ว',
+  'all-the-numbers': 'ชูจำนวนใดก็ได้ตั้งแต่ 0 ถึง 9',
+  'adding-is-more': 'บวก 1 และ 2 — บวกแล้วมากขึ้น',
+  'part-and-whole': 'นำส่วนย่อยมารวมกันให้เป็น 5',
+  'bigger-adds': 'บวกให้ได้ผลรวมถึง 9 โดยใช้นิ้วโป้ง',
+  'taking-away': 'เอาออก 1 และ 2 — นับถอยหลัง',
+  'how-many-left': 'ลบภายใน 5 แล้วเหลือกี่อัน?',
+  'bigger-take-aways': 'เอาออกจำนวนที่มากขึ้น ได้ถึง 9',
+  'tens-and-ones': 'ใช้สองมือ — มือซ้ายเป็นหลักสิบ มือขวาเป็นหลักหน่วย',
+  'all-the-way-to-99': 'ชูจำนวนใดก็ได้ตั้งแต่ 0 ถึง 99 ด้วยสองมือ',
+  'adding-big': 'บวกจำนวนที่ใหญ่ขึ้น ไปจนถึง 99',
+  'taking-from-big': 'เอาออกจำนวนที่ใหญ่ขึ้น ไปจนถึง 99',
+}
+
+const lessonStepsTh: Record<string, string> = {
+  // หน่วย 1 — ความรู้สึกเชิงจำนวน (นับ / เปรียบเทียบ / ศูนย์)
+  'hm-watch-1': 'มานับกันเถอะ! ชี้ไปที่แต่ละอันแล้วพูดจำนวน หนึ่ง สอง สาม',
+  'hm-count-3': 'แตะแอปเปิลทีละลูกเพื่อนับ แล้วเลือกว่ามีกี่ลูก หนึ่ง สอง สาม!',
+  'hm-count-5': 'ทีนี้มาที่ดวงดาว แตะทีละดวงแล้วนับ มีทั้งหมดกี่ดวง?',
+  'hm-show-3': 'ทีนี้ชูสามด้วยนิ้วมือสิ!',
+  'hm-watch-2': 'จำนวนสุดท้ายที่พูดคือจำนวนทั้งหมด นับเก่งมาก!',
+  'mf-watch-1': 'กลุ่มไหนมีมากกว่า? กลุ่มที่มีของมากกว่าคือกลุ่มที่ใหญ่กว่า!',
+  'mf-compare-1': 'ฝั่งไหนมีมากกว่า? แตะกลุ่มที่มากกว่าสิ!',
+  'mf-compare-2': 'เปรียบเทียบอีกครั้ง — แตะกลุ่มที่มีมากกว่า',
+  'mf-choose-1': 'อะไรมากกว่ากัน สองหรือสี่? แตะเลย!',
+  'mf-watch-2': 'มากกว่าคือจำนวนที่ใหญ่กว่า น้อยกว่าคือจำนวนที่น้อยกว่า เท่ากันคือมีจำนวนเท่ากัน!',
+  'zm-watch-1': 'ศูนย์แปลว่าไม่มี — ไม่มีอะไรเลย กำมือไว้คือศูนย์!',
+  'zm-count-0': 'ตรงนี้มีคุกกี้กี่ชิ้น? ไม่มีเลย นั่นคือศูนย์!',
+  'zm-show-0': 'ชูศูนย์ให้ดูหน่อย — กำมือสิ!',
+  'zm-choose-0': 'จานว่างเปล่า มีกี่ชิ้น? แตะศูนย์!',
+
+  // หน่วย 2 — เลขโซโรบัน
+  'cf-watch-1': 'แต่ละนิ้วคือหนึ่ง! ชูนิ้วชี้คือหนึ่ง เพิ่มนิ้วกลางเป็นสอง',
+  'cf-watch-2': 'หนึ่ง สอง สาม สี่ — สี่นิ้ว นับเก่งมาก!',
+  'mt-watch-1': 'นี่คือความวิเศษ นิ้วโป้งมีค่าเท่ากับห้า! เราจึงชูจำนวนใหญ่ๆ ได้ด้วยมือเดียว',
+  'mt-watch-2': 'นิ้วโป้งเท่ากับห้า จำไว้นะ — นี่คือเคล็ดลับของการนับนิ้ว!',
+
+  // หน่วย 2 (ต่อ) — 6–9 และทบทวนทั้งหมด
+  'fm-watch-1': 'หกคือห้าบวกอีกหนึ่ง! กางนิ้วโป้งออก แล้วเพิ่มอีกหนึ่งนิ้ว',
+  'fm-watch-2': 'หก เจ็ด แปด เก้า — ห้าและมากกว่า หนูทำได้แล้ว!',
+  'an-watch-1': 'ตอนนี้หนูรู้ครบหมดแล้ว ตั้งแต่ศูนย์ไปจนถึงเก้า เยี่ยมไปเลย!',
+
+  // หน่วย 3 — การบวก
+  'am-watch-1': 'เวลาบวก เรานำกลุ่มมารวมกันให้มากขึ้น',
+  'am-solve-1': 'หนึ่ง บวกอีกหนึ่ง ได้เท่าไร? ชูให้ดูหน่อย!',
+  'am-solve-2': 'สาม บวกอีกหนึ่ง ชูคำตอบให้ดูหน่อย!',
+  'am-solve-3': 'สอง บวกอีกสอง ชูให้ดูหน่อย!',
+  'am-watch-2': 'บวกแล้วจำนวนจะใหญ่ขึ้นเสมอ',
+  'pw-watch-1': 'สองกับสามรวมกันเป็นห้า ส่วนเล็กๆ มารวมกันเป็นทั้งหมด',
+  'pw-solve-1': 'สอง บวกอีกสาม ชูให้ดูหน่อย!',
+  'pw-solve-2': 'หนึ่ง บวกอีกสี่ ชูให้ดูหน่อย!',
+  'pw-choose-1': 'หนึ่งบวกกับอะไรได้สี่? แตะคำตอบ!',
+  'pw-solve-3': 'ศูนย์ บวกอีกห้า ชูให้ดูหน่อย!',
+  'ba-watch-1': 'ห้าบวกอีกสองเป็นเจ็ด ใช้นิ้วโป้งแทนห้าสิ!',
+  'ba-solve-1': 'ห้า บวกอีกหนึ่ง ชูให้ดูหน่อย!',
+  'ba-solve-2': 'หก บวกอีกสอง ชูให้ดูหน่อย!',
+  'ba-solve-3': 'สี่ บวกอีกสาม ชูให้ดูหน่อย!',
+  'ba-solve-4': 'ห้า บวกอีกสี่ ชูให้ดูหน่อย!',
+
+  // หน่วย 4 — การลบ
+  'ta-watch-1': 'เวลาเอาออก จะเหลือน้อยลง',
+  'ta-solve-1': 'สาม เอาออกหนึ่ง เหลือเท่าไร? ชูให้ดูหน่อย!',
+  'ta-solve-2': 'สี่ เอาออกหนึ่ง ชูให้ดูหน่อย!',
+  'ta-solve-3': 'ห้า เอาออกสอง ชูให้ดูหน่อย!',
+  'ta-watch-2': 'เอาออกแล้วจำนวนจะเล็กลงเสมอ',
+  'hl-watch-1': 'ห้าเอาออกหนึ่งเหลือสี่ เหลือเท่าไร?',
+  'hl-solve-1': 'ห้า เอาออกหนึ่ง ชูให้ดูหน่อย!',
+  'hl-solve-2': 'สี่ เอาออกสอง ชูให้ดูหน่อย!',
+  'hl-solve-3': 'ห้า เอาออกห้า กำมือเป็นศูนย์!',
+  'hl-solve-4': 'สาม เอาออกสาม ชูศูนย์ให้ดูหน่อย!',
+  'bt-watch-1': 'เก้าเอาออกสี่เป็นห้า นับถอยหลังสิ!',
+  'bt-solve-1': 'เก้า เอาออกสอง ชูให้ดูหน่อย!',
+  'bt-solve-2': 'แปด เอาออกสาม ชูให้ดูหน่อย!',
+  'bt-solve-3': 'เจ็ด เอาออกห้า ชูให้ดูหน่อย!',
+  'bt-solve-4': 'เก้า เอาออกเก้า ชูศูนย์ให้ดูหน่อย!',
+
+  // หน่วย 5 — สองมือ ค่าประจำหลัก 0–99
+  'tao-watch-1': 'ทีนี้ใช้ทั้งสองมือ! มือซ้ายนับหลักสิบ มือขวานับหลักหน่วย',
+  'tao-watch-2': 'มือซ้ายคือหลักสิบ มือขวาคือหลักหน่วย — สองมือทำจำนวนที่ใหญ่ขึ้นได้!',
+  'atw-watch-1': 'สี่ที่มือซ้ายกับเจ็ดที่มือขวา เป็นสี่สิบเจ็ด!',
+  'atw-watch-2': 'หนูชูได้ทุกจำนวนเลย ไปจนถึงเก้าสิบเก้า!',
+  'ab-watch-1': 'สิบบวกอีกห้าเป็นสิบห้า ชูด้วยสองมือสิ!',
+  'ab-solve-1': 'สิบ บวกอีกห้า ชูด้วยสองมือให้ดูหน่อย!',
+  'ab-solve-2': 'ยี่สิบ บวกอีกสิบสาม ชูให้ดูหน่อย!',
+  'ab-solve-3': 'สามสิบ บวกอีกยี่สิบห้า ชูให้ดูหน่อย!',
+  'ab-watch-2': 'บวกจำนวนใหญ่ — ใช้สองมือชูคำตอบ',
+  'tb-watch-1': 'สิบห้าเอาออกห้าเหลือสิบ ชูด้วยสองมือสิ!',
+  'tb-solve-1': 'สิบห้า เอาออกห้า ชูด้วยสองมือให้ดูหน่อย!',
+  'tb-solve-2': 'สามสิบ เอาออกสิบ ชูให้ดูหน่อย!',
+  'tb-solve-3': 'สี่สิบห้า เอาออกยี่สิบสาม ชูให้ดูหน่อย!',
+  'tb-watch-2': 'ลบจำนวนใหญ่ — ชูคำตอบด้วยสองมือ',
+}
+
+const th: Strings = {
+  doc: {
+    title: 'SmartHand Math ✋🧮',
+    description:
+      'SmartHand Math — เกมคณิตคิดในใจแสนสนุกสำหรับเด็ก ไม่ต้องใช้มือกดเลย! ชูนิ้วให้กล้องเห็นเพื่อตอบ',
+    lang: 'th',
+  },
+
+  nav: {
+    brand: 'SmartHand Math',
+    home: 'หน้าแรก',
+    learn: 'เรียนรู้',
+    play: 'เล่น',
+    lessons: 'บทเรียน',
+    mirrorOn: 'เปิดกระจก',
+    mirrorOff: 'ปิดกระจก',
+    mirrorAria: 'สลับภาพกระจก',
+    muted: 'ปิดเสียง',
+    soundOn: 'เปิดเสียง',
+    soundAria: 'สลับเสียง',
+    cameraSizeAria: 'ขนาดกล้อง',
+    cameraSizeSm: 'เล็ก',
+    cameraSizeMd: 'กลาง',
+    cameraSizeLg: 'ใหญ่',
+    localeAria: 'เปลี่ยนภาษา',
+    skipToContent: 'ข้ามไปที่เนื้อหา',
+    footer: 'สร้างด้วย React · Vite · MediaPipe · Tailwind + DaisyUI',
+  },
+
+  home: {
+    heroLead: 'คณิตศาสตร์ที่หนู',
+    heroEmphasis: 'ชูขึ้นได้',
+    heroSuffix: ' ✋',
+    heroSubtitle:
+      'SmartHand Math เปลี่ยนกล้องเว็บแคมให้กลายเป็นตัวควบคุม ตอบโจทย์คณิตคิดในใจด้วยการชูนิ้วให้กล้องเห็น — ไม่ต้องใช้แป้นพิมพ์ ไม่ต้องใช้เมาส์ ใช้แค่มือ',
+    ctaPlay: '▶️ เล่นเลย',
+    ctaLearn: '✋ เรียนท่ามือ',
+    ctaLessons: '🎓 เริ่มบทเรียน',
+    features: [
+      {
+        title: 'ชูด้วยนิ้วมือ',
+        text: 'ชูมือขึ้นมา แล้วกล้องจะอ่านจำนวนนิ้วได้ทันที',
+      },
+      {
+        title: 'คณิตคิดในใจ',
+        text: 'บวก ลบ และสูตรคูณ ที่จะยากขึ้นเมื่อหนูทำคะแนนได้มากขึ้น',
+      },
+      {
+        title: 'เป็นมิตรและสนุก',
+        text: 'สีสันสดใส เสียงน่ารัก และเหรียญรางวัล ออกแบบมาเพื่อเด็กและห้องเรียน',
+      },
+    ],
+    onboarding: {
+      title: 'ใช้งานยังไง',
+      bodyStart: 'แตะ ',
+      bodyEmphasis1: 'เริ่ม',
+      bodyMid: ' ที่หน้าเล่นหรือหน้าเรียนรู้เพื่อเปิดกล้อง ทุกอย่างทำงานอยู่ในเบราว์เซอร์ของหนูเอง — ',
+      bodyEmphasis2: 'วิดีโอไม่ออกจากเครื่องของหนูเลย',
+      bodyEnd: ' (การใช้กล้องต้องใช้ HTTPS หรือ localhost)',
+      dismissAria: 'ปิด',
+    },
+  },
+
+  learn: {
+    title: 'เรียนท่ามือ',
+    subtitle: 'เปิดกล้องแล้วชูนิ้วขึ้นมา ลองทำแต่ละจำนวนตั้งแต่ 0 ถึง 10 ดูสิ!',
+    showing: 'หนูกำลังชู',
+    feedbackEmpty: 'หันมือเข้าหากล้องสิ…',
+    feedbackOne: 'หนึ่งนิ้ว — เยี่ยมมาก!',
+    feedbackMany: 'เก่งมาก! ลองฝึกจำนวนอื่นๆ ต่อไปนะ',
+  },
+
+  play: {
+    idleTitle: 'พร้อมเล่นหรือยัง?',
+    idleBody: (lives: number) =>
+      `เลือกโหมด แล้วตอบแต่ละข้อด้วยการชูนิ้วให้ถูกจำนวน หนูมี ${lives} ชีวิต`,
+    prompt: 'ชูคำตอบด้วยนิ้วมือ',
+    promptBigger: 'ชูจำนวนที่มากกว่า',
+    promptNext: 'ชูจำนวนถัดไป',
+    modeEndless: 'ไม่รู้จบ',
+    modeEndlessDesc: 'เล่นจนกว่าชีวิตจะหมด หนูจะทำคะแนนได้สูงแค่ไหน?',
+    modeTimed: 'จับเวลา',
+    modeTimedDesc: (seconds: number) => `ตอบให้ได้มากที่สุดภายใน ${seconds} วินาที`,
+    modeMissions: 'ภารกิจ',
+    modeMissionsDesc: (goal: number) => `ตอบให้ถูก ${goal} ข้อเพื่อชนะ!`,
+    goalProgress: (done: number, total: number) => `🎯 ${done} / ${total}`,
+    livesLabel: (lives: number) => `เหลืออีก ${lives} ชีวิต`,
+    waiting: '✋ กำลังรอมือของหนู…',
+    showing: (detected: number) => `หนูกำลังชู ${detected}`,
+    autoPrompt: (n: number) => `กำลังส่งคำตอบ ${n}…`,
+    autoPromptCancel: 'เปลี่ยนมือเพื่อยกเลิก',
+    autoPromptAria: (n: number) => `กำลังส่งคำตอบ ${n} เปลี่ยนมือเพื่อยกเลิก`,
+    correct: (expected: number) => `✅ ถูกต้อง! คำตอบคือ ${expected}`,
+    wrong: (given: number, expected: number) => `❌ อุ๊ปส์ หนูชู ${given} คำตอบคือ ${expected}`,
+    padTitle: 'ไม่มีกล้อง? พิมพ์คำตอบ (0–99):',
+    padPlaceholder: '?',
+    padAria: 'พิมพ์คำตอบ',
+    padSubmit: 'ส่งคำตอบ',
+    padHelper:
+      'เมื่อใช้กล้อง ให้ชูค่านิ้วค้างไว้ให้นิ่ง แล้ววงแหวนจะนับถอยหลังเพื่อส่งคำตอบ (เปลี่ยนมือเพื่อยกเลิก) มือซ้าย = หลักสิบ มือขวา = หลักหน่วย (เช่น 3 ที่มือซ้าย + 7 ที่มือขวา = 37)',
+    modalWon: '🎉 หนูชนะแล้ว!',
+    modalLost: '💀 จบเกม',
+    youScored: 'หนูได้คะแนน',
+    bestLabel: (best: number) => `สูงสุด: ${best}`,
+    playAgain: '🔁 เล่นอีกครั้ง',
+    home: '🏠 หน้าแรก',
+  },
+
+  camera: {
+    off: '📷 กล้องปิด',
+    loading: '⏳ กำลังโหลด…',
+    ready: '● กำลังติดตาม',
+    blocked: '⛔ กล้องถูกบล็อก',
+    startAria: 'เปิดกล้อง',
+    stopAria: 'ปิดกล้อง',
+    videoAria: 'ภาพจากกล้องสำหรับนับนิ้ว',
+    errorTitle: '⛔ กล้องถูกบล็อก',
+    errorBody: (error: string) =>
+      `${error} กรุณาอนุญาตให้ใช้กล้องในเบราว์เซอร์ แล้วแตะ ▶️ เพื่อลองอีกครั้ง (กล้องต้องใช้ HTTPS หรือ localhost)`,
+  },
+
+  game: {
+    level: (level: number) => `ระดับ ${level}`,
+    difficultyEasy: 'ง่าย',
+    difficultyMedium: 'ปานกลาง',
+    difficultyHard: 'ยาก',
+    timer: (remaining: number) => `⏱ ${remaining} วิ`,
+    timerAria: 'ตัวจับเวลาถอยหลัง',
+  },
+
+  lessons: {
+    navLabel: 'บทเรียน',
+    listTitle: 'เลือกบทเรียน',
+    listSubtitle: 'เรียนไปทีละขั้น เรียนจบหนึ่งบทเพื่อปลดล็อกบทต่อไป!',
+    start: 'เริ่ม',
+    continue: 'เรียนต่อ',
+    replay: '🔁 ฟังอีกครั้ง',
+    next: 'ถัดไป ➡️',
+    listen: '🎧 กำลังฟัง…',
+    locked: '🔒 ล็อกอยู่',
+    complete: '✅ เสร็จแล้ว',
+    showMePrompt: (n: number) => `ชู ${n} ให้ดูหน่อย!`,
+    countPrompt: 'แตะทีละอัน แล้วเลือกว่ามีกี่อัน',
+    choosePrompt: 'แตะคำตอบ',
+    comparePrompt: 'กลุ่มไหนมีมากกว่า? แตะเลย!',
+    same: '🟰 เท่ากัน',
+    countObjectAria: 'แตะเพื่อนับ',
+    compareLeftAria: 'แตะกลุ่มด้านซ้าย',
+    compareRightAria: 'แตะกลุ่มด้านขวา',
+    solvePrompt: 'ชูคำตอบด้วยนิ้วมือ',
+    tryAgain: 'ลองอีกครั้ง!',
+    assessmentTitle: 'ตรวจสอบเร็วๆ',
+    passed: '🎉 เรียนจบบทแล้ว!',
+    failed: 'พยายามได้ดีมาก! อยากลองอีกครั้งไหม?',
+    spokenGreat: 'เก่งมาก!',
+    spokenPassed: 'หนูทำได้! เรียนจบบทแล้ว',
+    spokenFailed: 'พยายามได้ดีมาก! มาลองอีกครั้งกันนะ',
+    scoreLabel: (score: number, total: number) => `หนูทำได้ ${score} จาก ${total}`,
+    starsLabel: (s: number) => `${s} ดาว`,
+    playAgain: '🔁 ลองอีกครั้ง',
+    back: '🏠 กลับไปหน้าบทเรียน',
+    padTitle: 'ไม่มีกล้อง? พิมพ์คำตอบ (0–9)',
+    padAria: 'พิมพ์คำตอบ',
+    padSubmit: 'ตรวจคำตอบ',
+    titles: lessonTitlesTh,
+    objectives: lessonObjectivesTh,
+    steps: lessonStepsTh,
+  },
+
+  common: {
+    close: 'ปิด',
+    closeAria: 'ปิดหน้าต่าง',
+    errorTitle: 'อุ๊ปส์! มีบางอย่างผิดพลาด',
+    errorBody: 'มาเริ่มกันใหม่นะ — แตะปุ่มเพื่อโหลดหน้านี้ใหม่',
+    errorReload: '🔄 เริ่มใหม่',
+  },
+}
+
+export const STRINGS: Record<Locale, Strings> = { en, th }
 
 /** All supported locale codes (used to validate persisted/user input). */
 export const LOCALES: readonly Locale[] = ['en', 'th']
