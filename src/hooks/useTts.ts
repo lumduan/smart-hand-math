@@ -20,6 +20,8 @@ export interface Tts {
   speaking: boolean
   /** Whether this browser can synthesize speech at all. */
   supported: boolean
+  /** Whether at least one voice is available yet (false → speak() won't produce audio). */
+  hasVoices: boolean
 }
 
 // Kid-tuned defaults: slower and a touch brighter than the browser default.
@@ -55,6 +57,7 @@ export function useTts(): Tts {
   const { volume, muted } = useAppSettings()
   const [supported] = useState(detectSupport)
   const [speaking, setSpeaking] = useState(false)
+  const [hasVoices, setHasVoices] = useState(false)
 
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
   const resumeTimerRef = useRef<number | null>(null)
@@ -107,6 +110,7 @@ export function useTts(): Tts {
         voices.find((v) => v.localService) ??
         voices[0] ??
         null
+      setHasVoices(true)
     }
     pick()
     synth.addEventListener('voiceschanged', pick)
@@ -138,6 +142,7 @@ export function useTts(): Tts {
         clearResumeTimer()
         utterRef.current = null
         if (mountedRef.current) setSpeaking(false)
+        opts?.onEnd?.() // release any gate (e.g. WatchView's Next) on a real speech error
       }
 
       utterRef.current = utter
@@ -172,5 +177,8 @@ export function useTts(): Tts {
     }
   }, [])
 
-  return useMemo(() => ({ speak, cancel, speaking, supported }), [speak, cancel, speaking, supported])
+  return useMemo(
+    () => ({ speak, cancel, speaking, supported, hasVoices }),
+    [speak, cancel, speaking, supported, hasVoices],
+  )
 }

@@ -32,3 +32,20 @@
     @apply not-sr-only fixed left-4 top-4 z-50 rounded-lg bg-primary px-4 py-2 font-display text-primary-content shadow-lg;
   }
 }
+
+/*
+ * Reduced-motion: neutralize CSS transitions/animations app-wide (the tap-view
+ * scale/border transitions, etc.). framer-motion is handled by
+ * <MotionConfig reducedMotion="user"> and confetti by disableForReducedMotion,
+ * so this covers the remaining plain-CSS motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

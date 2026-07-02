@@ -209,9 +209,8 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 ## Phase 8 — Enhancement / Future Vision
 
-> Goal: post-v1.0 enhancements. Two near-term usability items (camera sizing,
-> auto-submit) are scheduled next; Lessons is drafted as a framework only (to be
-> detailed later); the remaining items are optional/deferred.
+> Goal: post-v1.0 enhancements. Camera sizing (8.1), auto-submit (8.2), and the
+> Lessons curriculum (8.3) are shipped; the remaining items are optional/deferred.
 
 ### 8.1 Camera display size
 
@@ -234,24 +233,18 @@ engineering-doc conventions (ADR / FRD / RFC / WBS / HLD / PoC) used throughout.
 
 **Exit criteria:** a held gesture visibly prompts then commits; cancel on change / no-hand; timing tunable; the 500ms-fast-commit decision resolved and documented.
 
-### 8.3 Lessons / curriculum (framework)
+### 8.3 Lessons / curriculum ✅ shipped
 
-> Framework only — to be detailed later. Sketches the path from free-practice (Learn) to a guided curriculum. No code yet; full RFC deferred.
+> Built across Phases A–D per [RFC-0004](./rfc/RFC-0004-lessons-curriculum.md) + [lessons/README](./lessons/README.md); architecture in [ADR-0009](./adr/ADR-0009-guided-lessons-architecture.md).
 
-- **Goal:** structured lessons that teach Soroban finger-math progressively, reusing the existing engine, generator, and camera input.
-- **Groundwork needed first:**
-  - Routing: lazy `/lessons` and `/lessons/:id` alongside `/`, `/learn`, `/play`.
-  - Lesson data model: `{ id, title, objective, steps[], targetNumbers[], assessment }` (data-only, e.g. `src/content/lessons.ts`).
-  - Progress tracking: per-lesson completion in `localStorage` (new context or extend `AppSettings`/`Game`).
-  - Reuse (no new CV pipeline): `fingerMathLogic` (recognition), `mathGenerator` (problems), `CameraView` (input).
-- **Draft lesson outline (framework):**
-  - Lesson 1 — Counting with one hand (0–9): show & recognize each Soroban digit.
-  - Lesson 2 — Counting with two hands (0–99): tens (left) + ones (right) place value.
-  - Lesson 3 (…) — Addition / subtraction with finger math.
-  - "…" further lessons TBD (times tables, comparison, sequences).
-- **Status:** FRAMEWORK — outline only; scope, age bands, and assessment model to be specified in a later RFC.
+A guided, spoken, mastery-gated **Lessons** surface (`/lessons`, `/lessons/:id`) that teaches 5–6-year-olds from counting to two-hand arithmetic — reusing the existing engine (no new CV pipeline).
 
-**Exit criteria (framework):** outline agreed; no code yet.
+- **Delivered:** 17 lessons across 5 units — Unit 1 number-sense (count/compare/zero), Unit 2 Soroban digits 0–9, Units 3–4 addition/subtraction within 9, Unit 5 two-hand place value + arithmetic to 99.
+- **Architecture:** data-only `CURRICULUM` (`src/content/lessons.ts`) + `LessonsContext` (`localStorage['smartmath.lessons']`, sequential unlock, gentle 4/5 stars); browser-TTS narration (`useTts`) for pre-readers; `CameraView.digitMode` (1-hand 0–9 vs 2-hand 0–99 place value); on-the-fly assessment generators (no consecutive repeats); app-wide `ErrorBoundary`.
+- **Reuse (no new CV pipeline):** `fingerMathLogic`, `mathGenerator`, `CameraView`, `useAutoSubmit`, `useAudio`, confetti.
+- **Status:** ✅ SHIPPED (Phases A–D). Deferred follow-on: real Thai translation of the lesson prose (data-only, §8.4).
+
+**Exit criteria:** ✅ full 5-unit track playable end-to-end; progress/stars/unlock persist under `smartmath.lessons`; lint/typecheck/build + tests green.
 
 ### 8.4 Longer-term / future vision (deferred)
 
@@ -302,7 +295,7 @@ Phase 0 (Bootstrap)
 
 > Update this section as phases complete.
 
-- **Active phase:** — Phase 8.1 / 8.2 in planning (RFC-0003 for AutoSubmit); 8.3 Lessons is a framework; build to follow
+- **Active phase:** — Phase 8.1 / 8.2 / 8.3 (Lessons, 17-lesson track) shipped; remaining Phase 8 items optional/deferred
 - **Completed:**
   - Phase 0 (Bootstrap) — public repo, scaffold, Docker, CI, MIT license, CLAUDE.md, README; core Soroban engine v1 implemented and builds green
   - Phase 1 (Engineering Docs & Conventions) — `docs/plans/` populated: HLD, FRD, WBS, ADR template + ADR-0001..0004 (+ RFC template); conventions system established
@@ -313,6 +306,6 @@ Phase 0 (Bootstrap)
   - Phase 6 (Accessibility, Performance & Privacy) — full WCAG AA pass (reduced-motion, focus-visible, modal dialog, skip-link, aria-live); code-split (lazy routes + dynamic MediaPipe chunk; no >500kB chunk); self-hosted model+wasm+font + `vite-plugin-pwa` (offline, zero egress); HTTPS + privacy docs. 136 tests green.
   - Phase 7 (Distribution & Release) — hardened non-root nginx (gzip/cache/security headers + healthcheck); tag-driven GHCR `release.yml`; v1.0.0 + CHANGELOG/RELEASING/dependabot; README refresh. Published v1.0.0.
 - **In progress:**
-  - Phase 8.1 (camera display size) & 8.2 (auto-submit) implemented — [camera-display-size](./camera-display-size/README.md), [auto-submit](./auto-submit/README.md) + [RFC-0003](./rfc/RFC-0003-auto-submit.md); AutoSubmit timing tuning → ADR-0008 pending. Lessons (8.3) framework only.
-- **MVP (Phases 0–7) complete.** Phase 8.1 + 8.2 implemented; 8.3 Lessons deferred to a later RFC.
+  - Phase 8.1 (camera display size) & 8.2 (auto-submit) implemented — [camera-display-size](./camera-display-size/README.md), [auto-submit](./auto-submit/README.md) + [RFC-0003](./rfc/RFC-0003-auto-submit.md); AutoSubmit timing tuning → ADR-0008 pending. Lessons (8.3) shipped — 17-lesson / 5-unit track (RFC-0004 + ADR-0009).
+- **MVP (Phases 0–7) complete.** Phase 8.1 + 8.2 + 8.3 (Lessons) shipped.
 - **Blocked by:** nothing

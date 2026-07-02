@@ -50,6 +50,7 @@ describe('useTts — unsupported environment', () => {
   it('reports supported=false and every method is a safe no-op', () => {
     const { result } = renderHook(() => useTts(), { wrapper: AppSettingsProvider })
     expect(result.current.supported).toBe(false)
+    expect(result.current.hasVoices).toBe(false)
     expect(result.current.speaking).toBe(false)
     expect(() => {
       act(() => {
@@ -84,6 +85,7 @@ describe('useTts — supported environment', () => {
   it('detects support and speaks with kid-tuned rate/pitch + settings volume', () => {
     const { result } = renderHook(() => useTts(), { wrapper: AppSettingsProvider })
     expect(result.current.supported).toBe(true)
+    expect(result.current.hasVoices).toBe(true) // stubbed getVoices() returns voices
 
     act(() => result.current.speak('count to four'))
 

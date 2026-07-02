@@ -92,7 +92,10 @@ function WatchView({ step, onComplete }: { step: Extract<LessonStep, { kind: 'wa
   const [ready, setReady] = useState(false)
   const minMs = step.minDurationMs ?? WATCH_MIN_MS
   const narration = resolveStep(step, t.lessons)
-  const willSpeak = tts.supported && !muted && narration.length > 0
+  // Require an actual voice: a browser can report `supported` yet have none, in
+  // which case speech never fires `onend` — gate on hasVoices so Next falls back
+  // to the minDuration timer instead of waiting the full SPEECH_CAP_MS.
+  const willSpeak = tts.supported && tts.hasVoices && !muted && narration.length > 0
 
   useEffect(() => {
     setReady(false)
@@ -176,7 +179,7 @@ function FingerAnswerView({
   const authored = t.lessons.steps[step.id]
   const spoken =
     typeof authored === 'string' ? authored : step.kind === 'solve' ? spokenExpression(step.display) : prompt
-  const canReplay = tts.supported && !muted
+  const canReplay = tts.supported && tts.hasVoices && !muted
 
   const [detected, setDetected] = useState(-1)
   const [feedback, setFeedback] = useState<null | 'correct' | 'wrong'>(null)
@@ -317,7 +320,7 @@ function ChooseView({
   const ttsRef = useRef(tts)
   ttsRef.current = tts
   const prompt = resolveStep(step, t.lessons)
-  const canReplay = tts.supported && !muted
+  const canReplay = tts.supported && tts.hasVoices && !muted
 
   const [picked, setPicked] = useState<number | null>(null)
   const [locked, setLocked] = useState(false)
@@ -418,7 +421,7 @@ function CountView({
   const ttsRef = useRef(tts)
   ttsRef.current = tts
   const prompt = resolveStep(step, t.lessons)
-  const canReplay = tts.supported && !muted
+  const canReplay = tts.supported && tts.hasVoices && !muted
 
   const [tapped, setTapped] = useState<ReadonlySet<number>>(new Set())
   const [picked, setPicked] = useState<number | null>(null)
@@ -544,7 +547,7 @@ function CompareView({
   const ttsRef = useRef(tts)
   ttsRef.current = tts
   const prompt = resolveStep(step, t.lessons)
-  const canReplay = tts.supported && !muted
+  const canReplay = tts.supported && tts.hasVoices && !muted
 
   const [choice, setChoice] = useState<null | 'more' | 'fewer' | 'equal'>(null)
   const [locked, setLocked] = useState(false)

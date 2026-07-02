@@ -174,6 +174,7 @@ const en = {
       'SmartHand Math turns your webcam into a controller. Answer mental-math questions by showing fingers to the camera — no keyboard, no mouse, just hands.',
     ctaPlay: '▶️ Play now',
     ctaLearn: '✋ Learn the gestures',
+    ctaLessons: '🎓 Start lessons',
     features: [
       {
         title: 'Show with fingers',

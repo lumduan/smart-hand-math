@@ -25,6 +25,12 @@ export function Home() {
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-base-content/70">{t.home.heroSubtitle}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
+          {/* Guided lessons are the beginner on-ramp — lead with them. */}
+          <Link to="/lessons">
+            <Button size="lg" variant="accent" onClick={() => audio.playClick()}>
+              {t.home.ctaLessons}
+            </Button>
+          </Link>
           <Link to="/play">
             <Button size="lg" variant="primary" onClick={() => audio.playClick()}>
               {t.home.ctaPlay}
