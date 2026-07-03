@@ -45,8 +45,8 @@ export function MainLayout() {
         {t.nav.skipToContent}
       </a>
       <header className="navbar sticky top-0 z-20 border-b border-base-300 bg-base-100/90 px-4 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2">
-          <NavLink to="/" className="flex items-center gap-2 font-display text-xl font-extrabold text-primary">
+        <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-between">
+          <NavLink to="/" className="flex w-full items-center justify-center gap-2 font-display text-xl font-extrabold text-primary sm:w-auto sm:justify-start">
             <span className="text-2xl">✋</span>
             <span>{t.nav.brand}</span>
           </NavLink>
