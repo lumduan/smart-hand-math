@@ -5,7 +5,7 @@ import { TunePanel } from '@/components/dev/TunePanel'
 import { useAudio } from '@/hooks/useAudio'
 import { useStrings } from '@/i18n/useStrings'
 import { LOCALES } from '@/i18n/strings'
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 // Routes + icons are code-side; labels come from the i18n dictionary.
 const NAV_ROUTES = [
@@ -122,25 +122,31 @@ export function MainLayout() {
       </header>
 
       <main id="main" tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
-        <AnimatePresence mode="wait">
+        <Suspense
+          fallback={
+            <div className="flex justify-center py-20">
+              <span className="loading loading-spinner loading-lg text-primary" />
+            </div>
+          }
+        >
+          {/* Enter-fade only — NO AnimatePresence / mode="wait" / exit. Their
+              presence-tracking desyncs on a route whose page dispatches a context
+              update during mount (LessonRunner calls startLesson on mount when the
+              active session is for a different lesson), stalling the entering node
+              at opacity:0 → a black body recovered only by a re-render (a
+              header-icon toggle) or a reload. A plain keyed motion.div has no
+              presence bookkeeping to desync, so the enter fade always completes.
+              The lazy-chunk suspend case (motion#2269) is handled by the Suspense
+              boundary above. */}
           <motion.div
             key={location.pathname}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
-            <Suspense
-              fallback={
-                <div className="flex justify-center py-20">
-                  <span className="loading loading-spinner loading-lg text-primary" />
-                </div>
-              }
-            >
-              <Outlet />
-            </Suspense>
+            <Outlet />
           </motion.div>
-        </AnimatePresence>
+        </Suspense>
       </main>
 
       <footer className="border-t border-base-300 bg-base-100 px-4 py-4 text-center text-sm text-base-content/60">
