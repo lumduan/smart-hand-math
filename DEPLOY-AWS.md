@@ -42,8 +42,15 @@ Browser ──HTTPS──> Cloudflare edge ──tunnel (IPv6)──> cloudflare
 brief window.
 
 1. **Attach an Elastic IP** to the instance (AWS console, or `aws ec2 allocate-address` +
-   `associate-address`). Wait for SSM to report `Online`.
+   `associate-address`). Wait for SSM to report `Online` — typically ~1 minute.
 2. **Connect** via SSM Session Manager (EC2 → *Connect* → *Session Manager*). No SSH key, no open port.
+
+   > ⏱️ **RunCommand lags after the agent reconnects.** If you drive the box with
+   > `aws ssm send-command` instead of an interactive session, expect several minutes of
+   > `Pending` / `Delayed` *after* `PingStatus` already reads `Online` — the heartbeat comes back
+   > before command delivery does. It resolves on its own; just resend. Don't burn time debugging
+   > it: `ssm:ListCommands` is denied to the provisioning IAM user, and the
+   > `AWS-StartNonInteractiveCommands` document doesn't exist in `ap-southeast-7`.
 3. On the box — pull and (re)create. The image is **public**, so no registry login:
    ```bash
    sudo docker pull ghcr.io/lumduan/smart-hand-math:v1.1.0
@@ -87,6 +94,18 @@ sudo docker run -d --name smart-hand-math --restart unless-stopped \
 - **Never long-cache `sw.js`.** The service worker and `registerSW.js` are not content-hashed; the
   image deliberately serves them `Cache-Control: no-cache` so `registerType: 'autoUpdate'` can ship
   new builds. Long-caching them lets the Cloudflare edge pin returning visitors to a stale shell.
+  Verified in production: `/sw.js` comes back `cf-cache-status: REVALIDATED`, i.e. the edge checks
+  the origin on every request and never serves a stale copy. Cloudflare *does* rewrite the
+  browser-facing header to `max-age=14400` (its default Browser Cache TTL) — harmless, because
+  `registerSW.js` registers with the default `updateViaCache: 'imports'`, so browsers bypass their
+  HTTP cache for the SW script anyway. `index.html` keeps `no-cache` (`DYNAMIC`), which is what
+  makes a new deploy visible immediately.
+- **Cloudflare Web Analytics is incompatible with this app's CSP — by design.** If it's enabled for
+  the zone, Cloudflare injects `static.cloudflareinsights.com/beacon.min.js` into the HTML at the
+  edge (only for real browsers — `curl` sees the unmodified origin bytes). `script-src 'self'`
+  blocks it, so every visitor gets a console CSP error and no analytics are collected. Don't
+  "fix" this by widening the CSP: a third-party beacon contradicts the no-data-leaves-the-device
+  promise this app makes to children and their parents. Turn Web Analytics off for the zone instead.
 - **Camera needs a secure context** — Cloudflare terminates TLS at the edge, so `getUserMedia` works
   even though the origin container speaks plain HTTP.
 - **The app is playable without a camera** (on-screen number pad), which is also how it's tested
