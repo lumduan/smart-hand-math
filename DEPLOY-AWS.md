@@ -100,12 +100,28 @@ sudo docker run -d --name smart-hand-math --restart unless-stopped \
   `registerSW.js` registers with the default `updateViaCache: 'imports'`, so browsers bypass their
   HTTP cache for the SW script anyway. `index.html` keeps `no-cache` (`DYNAMIC`), which is what
   makes a new deploy visible immediately.
-- **Cloudflare Web Analytics is incompatible with this app's CSP — by design.** If it's enabled for
-  the zone, Cloudflare injects `static.cloudflareinsights.com/beacon.min.js` into the HTML at the
-  edge (only for real browsers — `curl` sees the unmodified origin bytes). `script-src 'self'`
-  blocks it, so every visitor gets a console CSP error and no analytics are collected. Don't
-  "fix" this by widening the CSP: a third-party beacon contradicts the no-data-leaves-the-device
-  promise this app makes to children and their parents. Turn Web Analytics off for the zone instead.
+- **Cloudflare Web Analytics is OFF for `handmath.org` — keep it that way.** Disabled 2026-07-15
+  (also on the `opendys.com` zone). When enabled, Cloudflare injects
+  `static.cloudflareinsights.com/beacon.min.js` into the HTML **at the edge**, which would make the
+  app contact a third party on every page load — contradicting the no-data-leaves-the-device promise
+  it makes to children and their parents, and [ADR-0001](docs/plans/adr/ADR-0001-client-side-no-backend.md).
+  `script-src 'self'` blocks the beacon, so while it was enabled it produced a console CSP error on
+  every visit and collected nothing. **Never "fix" that error by widening the CSP** — the block is
+  the privacy guarantee working. Turn the injection off instead (Analytics & Logs → Web Analytics →
+  the site → Manage site → Automatic Setup off, or Delete site). This only affects the client-side
+  RUM beacon; zone-level traffic analytics are server-side and unaffected.
+
+  Any edge feature that rewrites HTML has the same problem (Rocket Loader, Email Obfuscation,
+  Mirage, etc.) — the CSP will block the injected script and the app is what breaks, not the feature.
+
+  **Regression check** (works for any zone; the injection only targets real browsers, so a plain
+  `curl` will *not* reveal it — you must compare the two):
+  ```bash
+  UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
+  diff <(curl -s -H "User-Agent: $UA" https://handmath.org/) <(curl -s https://handmath.org/) \
+    && echo "clean: edge injects nothing"
+  ```
+  Identical output means a browser receives byte-for-byte what nginx serves. Confirmed 2026-07-15.
 - **Camera needs a secure context** — Cloudflare terminates TLS at the edge, so `getUserMedia` works
   even though the origin container speaks plain HTTP.
 - **The app is playable without a camera** (on-screen number pad), which is also how it's tested
