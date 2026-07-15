@@ -1,7 +1,12 @@
 # ADR-0001 — 100% client-side, no backend (Phase 1)
 
-- **Status:** Accepted
+- **Status:** Accepted — **strengthened, see [Update](#update--2026-06-30-phase-6) below**
 - **Date:** 2026-06-29
+
+> ℹ️ The core decision below still stands. One detail is out of date: the Decision section says the
+> MediaPipe assets are fetched "from a CDN by default". Since Phase 6 they are **self-hosted**, so
+> the app now makes **no external requests at all** — see the
+> [Update](#update--2026-06-30-phase-6). The text below is preserved as the 2026-06-29 record.
 
 ## Context
 
@@ -88,3 +93,29 @@ model input ever leaves the browser.
   Phase 1 simplicity; the static, env-var-driven model URL already covers the
   "which model" concern without a service. Can be revisited if a Phase 8
   dashboard needs it.
+
+## Update — 2026-06-30 (Phase 6)
+
+The privacy claim above got **stronger than originally written**. The Decision section says the
+model/wasm are fetched "from a CDN by default"; Phase 6 (`e5631ac`) made **self-hosting the
+default**, and the fonts (`@fontsource/baloo-2`, `@fontsource/mitr`) are bundled too.
+
+**The app therefore makes zero external requests** — not "zero egress of video/landmarks, plus some
+asset fetches", but no outbound contact with any third party whatsoever. Two consequences for the
+claims made above:
+
+- The "Privacy by construction" argument is now literally true rather than nearly true: there is no
+  external origin to grep *for*. Since 2026-07-15 the production image also ships
+  `Content-Security-Policy: default-src 'self'; connect-src 'self'`, which makes the guarantee
+  **browser-enforced** rather than a property of our code that a future dependency could quietly
+  break.
+- "Works offline-capable — *with a self-hosted model*" is now unconditional; that is the default.
+
+The "larger client bundle / CDN caching" trade-off in the Consequences section should be read as:
+the multi-megabyte wasm is served from our own origin, mitigated by the PWA's `CacheFirst` runtime
+caching and immutable edge caching rather than by a CDN. See [ADR-0003](./ADR-0003-mediapipe-tasks-vision.md#update--2026-06-30-phase-6)
+for the asset-delivery reversal in full, and `DEPLOY-AWS.md` for how the CSP enforces it.
+
+⚠️ Note for operators: enabling **Cloudflare Web Analytics** (or any edge feature that injects a
+third-party script) contradicts this ADR — it would make the app contact a third party on every page
+load. The CSP currently blocks such injections by design.

@@ -1,7 +1,12 @@
 # ADR-0003 — MediaPipe `tasks-vision` HandLandmarker
 
-- **Status:** Accepted
+- **Status:** Accepted — **asset delivery amended, see [Update](#update--2026-06-30-phase-6) below**
 - **Date:** 2026-06-29
+
+> ⚠️ **Read the [Update](#update--2026-06-30-phase-6) before acting on this ADR.** The library
+> choice below still stands, but the "**CDN by default**" asset decision was reversed the next day:
+> the model and wasm are now **self-hosted and bundled into the image**. The text below is preserved
+> as the record of what was decided on 2026-06-29.
 
 ## Context
 
@@ -77,3 +82,27 @@ Use **`@mediapipe/tasks-vision`** and its **`HandLandmarker`** API.
 - **MediaPipe Holistic (hands + pose + face).** Rejected as overkill: far
   heavier for a use case that only needs hands, increasing bundle size and
   compute for no Phase-1 benefit.
+
+## Update — 2026-06-30 (Phase 6)
+
+**The CDN-by-default asset decision above is reversed. The model and wasm are now self-hosted by
+default.** Landed in `e5631ac` ("Phase 6 — a11y, code-split, self-host + PWA"). The library choice,
+runtime mode, delegate strategy and `numHands` decisions are unaffected.
+
+- `VITE_MEDIAPIPE_MODEL_URL` now defaults to **`/models/hand_landmarker.task`** and
+  `VITE_MEDIAPIPE_WASM_URL` to **`/models/wasm`** (see `src/hooks/useHandTracker.ts`,
+  `.env.example`, and the `ARG`s in the `Dockerfile`). The ~40 MB of assets are committed under
+  `public/models/` and baked into the production image. Pointing the env vars at the
+  Google/jsDelivr CDNs is now the *override*, not the default.
+- **Why it flipped:** the "CDN dependency by default" trade-off accepted above turned out to be
+  incompatible with the Phase 6 offline/PWA goal and with ADR-0001's privacy claim — a CDN fetch is
+  still egress, and a parent cannot verify "nothing leaves the device" while the app calls out to
+  Google on first use. Self-hosting makes the guarantee structural rather than promised.
+- **Consequences now:** the "multi-megabyte wasm" cost is paid from our own origin instead of a CDN
+  (mitigated by the PWA's `CacheFirst` runtime caching of `/models/`, plus long-lived immutable
+  cache headers at the edge), and the container image is ~40 MB larger. In exchange the tracker no
+  longer has any external point of failure, and the production image enforces the result with
+  `Content-Security-Policy: connect-src 'self'` (see `DEPLOY-AWS.md`).
+
+This amendment was recorded retroactively on 2026-07-15; the flip itself was never given its own
+ADR, which is why this document read as stale for two weeks.

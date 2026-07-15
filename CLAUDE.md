@@ -79,7 +79,7 @@ These three constraints shape every decision in the project.
 | **Core framework** | **React 19** (latest stable) | Function components + Hooks only. |
 | **Bundler / dev server** | **Vite** (latest stable) | Fast HMR; ESM-native. |
 | **Language** | **TypeScript** (strict) | `strict: true`, `noUnusedLocals`, `noUnusedParameters`. |
-| **AI / hand tracking** | **`@mediapipe/tasks-vision`** — `HandLandmarker` API | Returns 21 landmarks/hand + `handedness`. Loads model + wasm from CDN by default; can be self-hosted in `public/models/`. |
+| **AI / hand tracking** | **`@mediapipe/tasks-vision`** — `HandLandmarker` API | Returns 21 landmarks/hand + `handedness`. Model + wasm are **self-hosted** in `public/models/` (Phase 6) — no CDN egress, works offline. Point `VITE_MEDIAPIPE_*_URL` at a CDN to override (see [§11](#11-environment-variables)). |
 | **Styling** | **Tailwind CSS** + **`daisyui`** plugin | Use a kid-friendly DaisyUI theme such as **`cupcake`** or **`pastel`` (built-in) or a custom pastel theme. |
 | **State management** | **Native React Context**, modularized into `GameContext` and `AppSettingsContext` | No Redux/Zustand in Phase 1. |
 | **Animation** | **`framer-motion`** | Fluid page/element transitions and visual micro-rewards (confetti, badge pop, shake-on-wrong). |

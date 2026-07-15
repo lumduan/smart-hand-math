@@ -89,7 +89,7 @@ to work on a classroom device without setup, to be playable without a webcam
 | ID | Requirement |
 |----|-------------|
 | **NFR-01 (Performance)** | Detection runs via `requestAnimationFrame`, calling `detectForVideo` **only on new frames** with a strictly-increasing timestamp; target ~60 fps on capable devices, with a CPU fallback when the GPU delegate is unavailable. |
-| **NFR-02 (Privacy)** | **Zero network egress** of video, landmarks, or model inputs. Only fetches are the MediaPipe model/wasm assets (CDN by default, self-hostable). Persistence is `localStorage`-only. *(Architecture-level; see HLD §7.)* |
+| **NFR-02 (Privacy)** | **Zero network egress** of video, landmarks, or model inputs. Since Phase 6 the MediaPipe model/wasm and the fonts are **self-hosted**, so the app fetches nothing from any external origin; the production image enforces this with `Content-Security-Policy: connect-src 'self'`. Persistence is `localStorage`-only. *(Architecture-level; see HLD §7.)* |
 | **NFR-03 (i18n-readiness)** | English in Phase 1; structure must allow Thai (and others) as a **data-only** addition later. |
 | **NFR-04 (Compatibility)** | Runs on modern evergreen browsers; camera requires a **secure context** (HTTPS or `localhost`). |
 | **NFR-05 (Offline-capable)** | Designed to be runnable fully offline once the model is self-hosted (forward — Phase 6 PWA). |
