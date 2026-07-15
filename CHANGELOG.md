@@ -4,6 +4,38 @@ All notable changes to **SmartHand Math** are documented here. The format is bas
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-07-15
+
+Lessons polish plus the first real production deployment: `handmath.org` now serves
+this image from AWS EC2 behind a Cloudflare Tunnel (previously it served a Vite dev
+server). See [`DEPLOY-AWS.md`](./DEPLOY-AWS.md).
+
+### Added
+- **Endless practice** — the lesson completion screen offers "Keep practicing"
+  alongside "Next lesson"; `EndlessPracticeBar` shows the round counter and an End
+  action. Practice rounds re-roll fresh items from the lesson's own pool and never
+  affect the recorded lesson score.
+- **Unlock a locked lesson** via a tap → confirm popup.
+
+### Fixed
+- **Service worker is no longer long-cached.** `sw.js` / `registerSW.js` are not
+  content-hashed, but the nginx `expires 1y` rule matched them, so a CDN edge could
+  pin returning visitors to a stale precached shell and `registerType: 'autoUpdate'`
+  would never ship a new build. They now send `Cache-Control: no-cache`.
+- `manifest.webmanifest` is served as `application/manifest+json` (nginx has no
+  `.webmanifest` mime type, so it previously shipped as `application/octet-stream`).
+- Blank/black page on lesson navigation; header wrapping on small screens; thumb (not
+  open hand) shown for "6" in five-and-more; localized worded watch visuals.
+
+### Security
+- **Content-Security-Policy** added to the production image, making the zero-egress
+  guarantee browser-enforced (`default-src 'self'`, `connect-src 'self'`). Also
+  `Permissions-Policy` (`camera=(self)`, `microphone=()`), `Cross-Origin-Opener-Policy`,
+  `Cross-Origin-Resource-Policy`, and `X-Frame-Options: DENY`.
+
+### Changed
+- The dev server's `allowedHosts` no longer lists `hand.candythink.com` (retired).
+
 ## [1.0.0] — 2026-06-30
 
 First public release — the MVP. A hands-free mental-math game for kids: answer by

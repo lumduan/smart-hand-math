@@ -1,7 +1,7 @@
 {
   "name": "smart-hand-math",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "type": "module",
   "description": "Interactive mental-math game for kids that uses hand-gesture recognition (MediaPipe) as the controller.",
