@@ -3,6 +3,7 @@ import {
   resolveStep,
   buildAssessmentStep,
   buildAssessment,
+  buildPracticeStep,
   assessmentPassed,
   compareAnswer,
   spokenExpression,
@@ -219,6 +220,37 @@ describe('buildAssessment', () => {
     for (const s of seq) {
       if (s.kind !== 'showMe') throw new Error('expected showMe')
       expect(s.target).toBe(5)
+    }
+  })
+})
+
+describe('buildPracticeStep', () => {
+  const lesson = LESSON_MAP['counting-fingers'] // showMe 1..4 — enough range to vary
+
+  it('stamps a round-suffixed id so the camera hold resets between endless items', () => {
+    expect(buildPracticeStep(lesson, 7).id).toBe(`${lesson.id}-practice-7`)
+  })
+
+  it('ids differ per round', () => {
+    expect(buildPracticeStep(lesson, 0).id).not.toBe(buildPracticeStep(lesson, 1).id)
+  })
+
+  it('produces a valid assessment step from the lesson generator', () => {
+    const step = buildPracticeStep(lesson, 0)
+    expect(step.kind).toBe('showMe')
+    if (step.kind !== 'showMe') throw new Error('expected showMe')
+    expect(step.target).toBeGreaterThanOrEqual(1)
+    expect(step.target).toBeLessThanOrEqual(4)
+  })
+
+  it('avoids a back-to-back repeat when the range allows it', () => {
+    // showMe 1..4: across many draws the next target must differ from the previous.
+    for (let i = 0; i < 200; i++) {
+      const first = buildPracticeStep(lesson, 0)
+      if (first.kind !== 'showMe') throw new Error('expected showMe')
+      const second = buildPracticeStep(lesson, 1, first)
+      if (second.kind !== 'showMe') throw new Error('expected showMe')
+      expect(second.target).not.toBe(first.target)
     }
   })
 })

@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { Card } from '@/components/common/Card'
+import { EndlessPracticeBar } from '@/components/lessons/EndlessPracticeBar'
 import { LessonComplete } from '@/components/lessons/LessonComplete'
 import { LessonStep } from '@/components/lessons/LessonStep'
 import { StepProgress } from '@/components/lessons/StepProgress'
@@ -21,6 +22,7 @@ export function LessonRunner() {
   }, [lessonId, active?.lessonId, startLesson])
 
   const isAssess = active?.phase === 'assess'
+  const endless = active?.practiceMode === 'endless'
   // Assessment items are generated once (no consecutive repeats) when the assess
   // phase begins and stored on `active.assessment`; here we just index into them.
   // (Hooks must run before the early returns below.)
@@ -59,6 +61,7 @@ export function LessonRunner() {
         stars={progress[lesson.id]?.stars ?? 0}
         onExit={exitLesson}
         onRestart={() => startLesson(lesson.id)}
+        onPractice={() => startLesson(lesson.id, 'endless')}
       />
     )
   }
@@ -77,13 +80,22 @@ export function LessonRunner() {
     <div className="space-y-5">
       <header className="space-y-2 text-center">
         <h1 className="font-display text-2xl font-extrabold text-primary">{t.lessons.titles[lesson.id]}</h1>
-        <StepProgress
-          steps={lesson.steps}
-          current={isAssess ? lesson.steps.length : active.stepIndex}
-          assessing={isAssess}
-          assessmentIndex={active.assessmentIndex}
-          assessmentTotal={lesson.assessment.questions}
-        />
+        {endless ? (
+          <EndlessPracticeBar
+            lesson={lesson}
+            round={active.practiceRound + 1}
+            passed={progress[lesson.id]?.status === 'complete'}
+            onExit={exitLesson}
+          />
+        ) : (
+          <StepProgress
+            steps={lesson.steps}
+            current={isAssess ? lesson.steps.length : active.stepIndex}
+            assessing={isAssess}
+            assessmentIndex={active.assessmentIndex}
+            assessmentTotal={lesson.assessment.questions}
+          />
+        )}
       </header>
 
       {/*

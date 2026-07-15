@@ -128,6 +128,23 @@ export function assessmentPassed(lesson: Lesson, score: number): boolean {
 }
 
 /**
+ * Build ONE fresh endless-practice item for `lesson`. Unlike `buildAssessmentStep`,
+ * the id is round-suffixed (`${id}-practice-${round}`) so it changes every round —
+ * `useAutoSubmit` keys its hold-reset on the step id, so a fresh id is what makes the
+ * camera re-arm between endless items. Re-rolls (up to 8×) to avoid matching the
+ * previous item's signature when the generator's range allows it. Endless practice keeps
+ * a single-slot rolling buffer, so this is called once per answered item.
+ */
+export function buildPracticeStep(lesson: Lesson, round: number, prev?: AssessmentStep): AssessmentStep {
+  const id = `${lesson.id}-practice-${round}`
+  let step: AssessmentStep = { ...buildAssessmentStep(lesson, round), id }
+  for (let tries = 0; tries < 8 && prev && stepSignature(step) === stepSignature(prev); tries++) {
+    step = { ...buildAssessmentStep(lesson, round), id }
+  }
+  return step
+}
+
+/**
  * A speakable form of a `solve` expression: strips the ` = ?` tail and reads the
  * operators as words, so TTS says "two plus three" for "2 + 3 = ?". Used to
  * narrate generated assessment items (which have no authored narration) to

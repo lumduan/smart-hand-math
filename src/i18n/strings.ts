@@ -324,6 +324,11 @@ const en = {
     starsLabel: (s: number) => `${s} star${s === 1 ? '' : 's'}`,
     playAgain: '🔁 Try again',
     back: '🏠 Back to lessons',
+    // Completion-screen + endless-practice actions (Phase 8.5).
+    continuePractice: '🔁 Keep practicing',
+    nextLesson: '➡️ Next lesson',
+    endPractice: '⏹️ End',
+    practiceRound: (n: number) => `🎯 Practice • Round ${n}`,
     // No-camera fallback for camera steps (single-hand answers are 0–9).
     padTitle: 'No camera? Type the answer (0–9)',
     padAria: 'Type the answer',
@@ -657,6 +662,11 @@ const th: Strings = {
     starsLabel: (s: number) => `${s} ดาว`,
     playAgain: '🔁 ลองอีกครั้ง',
     back: '🏠 กลับไปหน้าบทเรียน',
+    // Completion-screen + endless-practice actions (Phase 8.5).
+    continuePractice: '🔁 ฝึกต่อ',
+    nextLesson: '➡️ บทถัดไป',
+    endPractice: '⏹️ จบ',
+    practiceRound: (n: number) => `🎯 ฝึก • รอบ ${n}`,
     padTitle: 'ไม่มีกล้อง? พิมพ์คำตอบ (0–9)',
     padAria: 'พิมพ์คำตอบ',
     padSubmit: 'ตรวจคำตอบ',

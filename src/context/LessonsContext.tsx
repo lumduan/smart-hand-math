@@ -7,8 +7,8 @@ import {
   useReducer,
   type ReactNode,
 } from 'react'
-import { CURRICULUM, LESSON_MAP, type AssessmentStep } from '@/content/lessons'
-import { buildAssessment } from '@/utils/lessonsContent'
+import { CURRICULUM, LESSON_MAP, nextLessonOf, type AssessmentStep } from '@/content/lessons'
+import { buildAssessment, buildPracticeStep } from '@/utils/lessonsContent'
 
 /**
  * Lessons session + progress state (Phase 8.3). Mirrors `GameContext`'s shape
@@ -33,6 +33,9 @@ export interface LessonProgress {
 
 export type LessonPhase = 'teach' | 'assess' | 'complete'
 
+/** `normal` = teach → assess → complete; `endless` = assess forever (no teach, no pass/fail). */
+export type PracticeMode = 'normal' | 'endless'
+
 export interface ActiveLesson {
   lessonId: string
   phase: LessonPhase
@@ -43,6 +46,9 @@ export interface ActiveLesson {
   attempts: number
   /** Generated quick-check items — empty while teaching, filled on entering `assess`. */
   assessment: AssessmentStep[]
+  practiceMode: PracticeMode
+  /** Endless only: items answered so far (also seeds unique per-round step ids). */
+  practiceRound: number
 }
 
 export interface LessonsState {
@@ -51,7 +57,7 @@ export interface LessonsState {
 }
 
 export type LessonsAction =
-  | { type: 'START_LESSON'; lessonId: string }
+  | { type: 'START_LESSON'; lessonId: string; mode?: PracticeMode }
   | { type: 'STEP_COMPLETE' }
   | { type: 'STEP_RETRY' }
   | { type: 'ASSESS_ANSWER'; correct: boolean }
@@ -79,19 +85,26 @@ export function initialLessonsState(progress: Record<string, LessonProgress> = {
 
 export function reducer(state: LessonsState, action: LessonsAction): LessonsState {
   switch (action.type) {
-    case 'START_LESSON':
+    case 'START_LESSON': {
+      const mode = action.mode ?? 'normal'
+      const lesson = LESSON_MAP[action.lessonId]
+      // Endless skips teaching: jump straight into a single assessment item that gets
+      // re-rolled each round. Normal starts empty and builds the full set on teach→assess.
       return {
         ...state,
         active: {
           lessonId: action.lessonId,
-          phase: 'teach',
+          phase: mode === 'endless' ? 'assess' : 'teach',
           stepIndex: 0,
           assessmentIndex: 0,
           assessmentScore: 0,
           attempts: 0,
-          assessment: [],
+          assessment: mode === 'endless' && lesson ? [buildPracticeStep(lesson, 0)] : [],
+          practiceMode: mode,
+          practiceRound: 0,
         },
       }
+    }
 
     case 'STEP_COMPLETE': {
       if (!state.active || state.active.phase !== 'teach') return state
@@ -122,6 +135,17 @@ export function reducer(state: LessonsState, action: LessonsAction): LessonsStat
       if (!state.active || state.active.phase !== 'assess') return state
       const active = state.active
       const lesson = LESSON_MAP[active.lessonId]
+
+      // Endless: never finalize — re-roll the current slot and bump the round counter.
+      // Per-answer feedback already happened in the views; correctness is irrelevant here.
+      if (active.practiceMode === 'endless') {
+        const prev = active.assessment[active.assessmentIndex]
+        const round = active.practiceRound + 1
+        const assessment = active.assessment.slice()
+        assessment[active.assessmentIndex] = buildPracticeStep(lesson, round, prev)
+        return { ...state, active: { ...active, assessment, practiceRound: round } }
+      }
+
       const score = active.assessmentScore + (action.correct ? 1 : 0)
       const isLast = active.assessmentIndex >= lesson.assessment.questions - 1
 
@@ -143,8 +167,7 @@ export function reducer(state: LessonsState, action: LessonsAction): LessonsStat
         },
       }
       if (passed) {
-        const idx = CURRICULUM.findIndex((l) => l.id === active.lessonId)
-        const nextLesson = idx >= 0 ? CURRICULUM[idx + 1] : undefined
+        const nextLesson = nextLessonOf(lesson) // CURRICULUM ordering is the unlock order
         if (nextLesson && !progress[nextLesson.id]) {
           progress[nextLesson.id] = { status: 'unlocked', stars: 0, bestAssessment: 0 }
         }
@@ -227,7 +250,7 @@ function loadProgress(): Record<string, LessonProgress> {
 // --- public API --------------------------------------------------------------
 
 interface LessonsApi extends LessonsState {
-  startLesson: (lessonId: string) => void
+  startLesson: (lessonId: string, mode?: PracticeMode) => void
   stepComplete: () => void
   retryStep: () => void
   assessAnswer: (correct: boolean) => void
@@ -251,7 +274,10 @@ export function LessonsProvider({ children }: { children: ReactNode }) {
     }
   }, [state.progress])
 
-  const startLesson = useCallback((lessonId: string) => dispatch({ type: 'START_LESSON', lessonId }), [])
+  const startLesson = useCallback(
+    (lessonId: string, mode?: PracticeMode) => dispatch({ type: 'START_LESSON', lessonId, mode }),
+    [],
+  )
   const stepComplete = useCallback(() => dispatch({ type: 'STEP_COMPLETE' }), [])
   const retryStep = useCallback(() => dispatch({ type: 'STEP_RETRY' }), [])
   const assessAnswer = useCallback((correct: boolean) => dispatch({ type: 'ASSESS_ANSWER', correct }), [])

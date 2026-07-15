@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/common/Button'
 import { Card } from '@/components/common/Card'
-import type { Lesson } from '@/content/lessons'
+import { nextLessonOf, type Lesson } from '@/content/lessons'
 import type { ActiveLesson, Stars } from '@/context/LessonsContext'
 import { useAudio } from '@/hooks/useAudio'
 import { useTts } from '@/hooks/useTts'
@@ -16,6 +16,8 @@ interface LessonCompleteProps {
   stars: Stars
   onExit: () => void
   onRestart: () => void
+  /** Drop into endless practice for this lesson (assessment items, no teach/pass-fail). */
+  onPractice: () => void
 }
 
 /**
@@ -23,11 +25,13 @@ interface LessonCompleteProps {
  * feedback on entry so a non-reader hears the outcome. (Extracted from
  * `LessonRunner`'s inline `CompleteScreen`.)
  */
-export function LessonComplete({ lesson, active, stars, onExit, onRestart }: LessonCompleteProps) {
+export function LessonComplete({ lesson, active, stars, onExit, onRestart, onPractice }: LessonCompleteProps) {
   const t = useStrings()
   const audio = useAudio()
   const tts = useTts()
   const passed = active.assessmentScore >= lesson.assessment.passThreshold
+  // "Next lesson" only when passed (so it's unlocked) and a next lesson exists.
+  const next = passed ? nextLessonOf(lesson) : undefined
 
   // Celebrate + narrate the result once on entry.
   useEffect(() => {
@@ -57,13 +61,18 @@ export function LessonComplete({ lesson, active, stars, onExit, onRestart }: Les
             {'⭐'.repeat(stars)}
           </p>
         )}
-        <div className="mt-5 flex justify-center gap-3">
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
           <Button variant="primary" onClick={onRestart}>
             {t.lessons.playAgain}
           </Button>
-          <Link to="/lessons" onClick={onExit}>
-            <Button variant="ghost">{t.lessons.back}</Button>
-          </Link>
+          <Button variant="ghost" onClick={onPractice}>
+            {t.lessons.continuePractice}
+          </Button>
+          {next && (
+            <Link to={`/lessons/${next.id}`} onClick={onExit}>
+              <Button variant="ghost">{t.lessons.nextLesson}</Button>
+            </Link>
+          )}
         </div>
       </Card>
     </motion.div>

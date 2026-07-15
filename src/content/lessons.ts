@@ -473,3 +473,9 @@ export const CURRICULUM: readonly Lesson[] = [
 export const LESSON_MAP: Readonly<Record<string, Lesson>> = Object.fromEntries(
   CURRICULUM.map((l) => [l.id, l]),
 )
+
+/** The next lesson in unlock order, or `undefined` if `lesson` is the last. */
+export function nextLessonOf(lesson: Lesson): Lesson | undefined {
+  const idx = CURRICULUM.findIndex((l) => l.id === lesson.id)
+  return idx >= 0 ? CURRICULUM[idx + 1] : undefined
+}

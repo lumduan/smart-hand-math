@@ -61,6 +61,8 @@ describe('reducer — START_LESSON', () => {
       assessmentScore: 0,
       attempts: 0,
       assessment: [],
+      practiceMode: 'normal',
+      practiceRound: 0,
     })
   })
 })
@@ -152,6 +154,37 @@ describe('reducer — ASSESS_ANSWER', () => {
   })
 })
 
+describe('reducer — endless practice', () => {
+  it('START_LESSON with mode endless jumps straight to assess with a single re-rollable item', () => {
+    const after = reducer(state(null), { type: 'START_LESSON', lessonId: FIRST.id, mode: 'endless' })
+    expect(after.active?.phase).toBe('assess')
+    expect(after.active?.practiceMode).toBe('endless')
+    expect(after.active?.practiceRound).toBe(0)
+    expect(after.active?.assessment).toHaveLength(1)
+    expect(after.active?.assessment[0].id).toBe(`${FIRST.id}-practice-0`)
+  })
+
+  it('ASSESS_ANSWER in endless re-rolls the slot, bumps the round, and never finalizes', () => {
+    const start = reducer(state(null), { type: 'START_LESSON', lessonId: FIRST.id, mode: 'endless' })
+    const prevId = start.active!.assessment[0].id
+    const after = reducer(start, { type: 'ASSESS_ANSWER', correct: true })
+    expect(after.active?.practiceRound).toBe(1)
+    expect(after.active?.phase).toBe('assess')
+    expect(after.active?.assessment).toHaveLength(1)
+    expect(after.active?.assessment[0].id).toBe(`${FIRST.id}-practice-1`)
+    expect(after.active?.assessment[0].id).not.toBe(prevId)
+    // Endless writes no progress and never unlocks the next lesson.
+    expect(after.progress[FIRST.id].status).toBe('unlocked') // seed value, untouched
+    expect(after.progress[SECOND.id]).toBeUndefined()
+  })
+
+  it('endless ASSESS_ANSWER ignores correctness (a wrong answer also advances)', () => {
+    const start = reducer(state(null), { type: 'START_LESSON', lessonId: FIRST.id, mode: 'endless' })
+    const after = reducer(start, { type: 'ASSESS_ANSWER', correct: false })
+    expect(after.active?.practiceRound).toBe(1)
+  })
+})
+
 describe('reducer — EXIT_LESSON / RESET_PROGRESS', () => {
   it('EXIT_LESSON clears the session but keeps progress', () => {
     const progress: Record<string, LessonProgress> = {
@@ -220,8 +253,8 @@ describe('useLessons hook', () => {
 // --- helpers -----------------------------------------------------------------
 
 function teach(): ActiveLesson {
-  return { lessonId: FIRST.id, phase: 'teach', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [] }
+  return { lessonId: FIRST.id, phase: 'teach', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [], practiceMode: 'normal', practiceRound: 0 }
 }
 function assess(): ActiveLesson {
-  return { lessonId: FIRST.id, phase: 'assess', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [] }
+  return { lessonId: FIRST.id, phase: 'assess', stepIndex: 0, assessmentIndex: 0, assessmentScore: 0, attempts: 0, assessment: [], practiceMode: 'normal', practiceRound: 0 }
 }
