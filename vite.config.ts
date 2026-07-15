@@ -31,6 +31,16 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+          // The manifest icon above is precached by vite-plugin-pwa WITH a revision, while this
+          // glob would also pick it up with `revision: null`. Two entries, same URL, different
+          // revisions => workbox throws `add-to-cache-list-conflicting-entries` from inside
+          // precacheAndRoute — which runs in sw.js's async AMD factory, so the throw silently
+          // skips registering the install handler AND every route after it. The SW then activates
+          // reporting healthy while caching nothing: no offline, no /models/ runtime cache, and
+          // navigations fall through to the network. Ignore it here (it stays precached via the
+          // icon entry) rather than dropping `svg` from globPatterns, so any future SVG is still
+          // precached.
+          globIgnores: ['assets/favicon.svg'],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
           runtimeCaching: [
             {

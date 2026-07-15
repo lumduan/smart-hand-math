@@ -4,6 +4,28 @@ All notable changes to **SmartHand Math** are documented here. The format is bas
 on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] — 2026-07-15
+
+### Fixed
+- **The PWA precached nothing — offline never worked.** `assets/favicon.svg` appeared **twice** in
+  the generated precache manifest: once via `globPatterns: '**/*.svg'` (`revision: null`) and once
+  as the webmanifest icon (`revision: "ca7f2440…"`). Same URL, different revisions, so workbox threw
+  `add-to-cache-list-conflicting-entries` from inside `precacheAndRoute`. That call lives in the
+  generated `sw.js`'s async AMD factory, so the throw was swallowed: the install handler was never
+  registered, and **neither was anything after it** — the navigation route and the `/models/`
+  CacheFirst rule included. The service worker then activated, reported healthy and controlled every
+  page while caching **nothing**. Fixed with `globIgnores: ['assets/favicon.svg']` (it stays
+  precached via the icon entry).
+
+  Verified by cutting the network: the old build fails to load at all, the new one renders the app
+  shell from a 47-entry precache. This also means the `Offline / PWA` claim in `1.0.0` below was not
+  true in practice until now.
+
+  Note the two fixes interact: with the precache finally populated, `1.1.0`'s `sw.js` `no-cache`
+  change becomes load-bearing. A/B tested — with the pre-`1.1.0` `expires 1y` rule, a returning
+  visitor is pinned to the old build *permanently*; with it, the new build lands on the first update
+  check.
+
 ## [1.1.0] — 2026-07-15
 
 Lessons polish plus the first real production deployment: `handmath.org` now serves
