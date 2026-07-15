@@ -61,9 +61,11 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       strictPort: true,
       // Vite 5.4+ blocks non-localhost Host headers by default (DNS-rebinding
-      // guard). Allow the Cloudflare-proxied domains used to reach this dev
-      // server over HTTPS. (localhost/127.0.0.1 always allowed.)
-      allowedHosts: ['hand.candythink.com', 'handmath.org'],
+      // guard). handmath.org now serves the production build from EC2 (see
+      // DEPLOY-AWS.md); this entry stays so the domain can be pointed back at a
+      // dev server as the deployment's rollback path.
+      // (localhost/127.0.0.1 always allowed.)
+      allowedHosts: ['handmath.org'],
       watch: {
         // polling is more reliable across the Docker bind-mount boundary
         usePolling: true,

@@ -55,31 +55,97 @@ http {
 }
 EOF
 
-# Server block: gzip + long-cache hashed assets + no-cache index.html + security
-# headers + SPA fallback. Caching uses `expires` (not `add_header`), so the
-# server-level security headers are inherited by every response.
-RUN { \
-      echo 'server {' ; \
-      echo '  listen 8080;' ; \
-      echo '  server_name _;' ; \
-      echo '  root /usr/share/nginx/html;' ; \
-      echo '  index index.html;' ; \
-      echo '' ; \
-      echo '  gzip on;' ; \
-      echo '  gzip_comp_level 5;' ; \
-      echo '  gzip_min_length 256;' ; \
-      echo '  gzip_proxied any;' ; \
-      echo '  gzip_types text/plain text/css application/javascript application/json image/svg+xml application/wasm;' ; \
-      echo '' ; \
-      echo '  add_header X-Content-Type-Options "nosniff" always;' ; \
-      echo '  add_header X-Frame-Options "SAMEORIGIN" always;' ; \
-      echo '  add_header Referrer-Policy "strict-origin-when-cross-origin" always;' ; \
-      echo '' ; \
-      echo '  location ~* \.(?:js|css|woff2?|png|jpe?g|gif|svg|task|wasm)$ { expires 1y; }' ; \
-      echo '  location = /index.html { expires -1; }' ; \
-      echo '  location / { try_files $uri $uri/ /index.html; }' ; \
-      echo '}' ; \
-    } > /etc/nginx/conf.d/default.conf
+# Security headers. Kept in a snippet because nginx `add_header` does NOT inherit into a location
+# that declares any add_header of its own — so this must be re-included in every such location.
+#
+# CSP: `connect-src 'self'` makes the zero-egress guarantee browser-enforced — the MediaPipe model +
+# wasm and the Mitr/Baloo fonts are all self-hosted, so the app contacts no external origin.
+# `wasm-unsafe-eval` is required by the MediaPipe vision runtime; `worker-src blob:` covers the
+# service worker and canvas-confetti's OffscreenCanvas worker; `style-src 'unsafe-inline'` covers
+# framer-motion's injected rules and `img-src data:` the inline daisyui icons. `media-src 'self'`
+# is safe: the camera feed is attached via `video.srcObject`, which CSP does not govern.
+# Do NOT add `require-trusted-types-for` — the MediaPipe bundle calls createPolicy("goog#html").
+#
+# Permissions-Policy — two directives differ from the sibling opendys app:
+#   * autoplay=(self) — CameraView auto-starts the camera with NO user gesture (cameraAutoStart is
+#     persisted, so it fires on every return visit), and useHandTracker swallows the play()
+#     rejection; the rAF loop then gates on a currentTime that never advances, so a blocked
+#     autoplay surfaces as a silently frozen feed rather than an error. Chromium was measured to
+#     play fine even under autoplay=() with --autoplay-policy=document-user-activation-required
+#     (a muted MediaStream is exempt from its autoplay gate), so this is not load-bearing there —
+#     but Safari/iOS is stricter and untested, and iPads are a primary target for this app. Given
+#     the failure is silent and `frame-src 'none'` already bars third-party media, (self) costs
+#     nothing and removes the risk.
+#   * microphone=() — this app never records audio (getUserMedia({ audio: false })). Thai TTS uses
+#     speechSynthesis, which is audio OUTPUT via an OS service and is not policy-gated.
+COPY <<'EOF' /etc/nginx/snippets/security-headers.conf
+add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self' blob:; manifest-src 'self'; media-src 'self'; object-src 'none'; frame-src 'none'; frame-ancestors 'none'; form-action 'self'" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header X-Frame-Options "DENY" always;
+add_header Permissions-Policy "accelerometer=(), autoplay=(self), bluetooth=(), browsing-topics=(), camera=(self), display-capture=(), encrypted-media=(), fullscreen=(self), geolocation=(), gyroscope=(), hid=(), idle-detection=(), local-fonts=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), screen-wake-lock=(), serial=(), usb=(), xr-spatial-tracking=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;
+add_header Cross-Origin-Resource-Policy "same-origin" always;
+EOF
+
+# Server block: gzip + long-cache hashed assets + no-cache entry/SW documents + SPA fallback.
+COPY <<'EOF' /etc/nginx/conf.d/default.conf
+server {
+  listen 8080;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  gzip on;
+  gzip_comp_level 5;
+  gzip_min_length 256;
+  gzip_proxied any;
+  gzip_types text/plain text/css application/javascript application/json image/svg+xml application/wasm;
+
+  include /etc/nginx/snippets/security-headers.conf;
+
+  # The PWA service worker + its registration script are NOT content-hashed, so they must
+  # revalidate: `registerType: 'autoUpdate'` can only ship a new build if a fresh sw.js is
+  # reachable. Without these, they fall into the 1y bucket below and Cloudflare's edge pins
+  # returning visitors to a stale precached shell (the edge does not honour a client's
+  # revalidation request). Exact-match locations outrank the regex regardless of order.
+  location = /sw.js {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "no-cache";
+  }
+  location = /registerSW.js {
+    include /etc/nginx/snippets/security-headers.conf;
+    add_header Cache-Control "no-cache";
+  }
+  # nginx has no .webmanifest mime type — without default_type it ships as octet-stream.
+  location = /manifest.webmanifest {
+    include /etc/nginx/snippets/security-headers.conf;
+    default_type application/manifest+json;
+    add_header Cache-Control "no-cache";
+  }
+
+  # Content-hashed build assets + the self-hosted MediaPipe model/wasm — cache hard.
+  # (.task needs no mime type: MediaPipe checks response.ok and reads .arrayBuffer().)
+  location ~* \.(?:js|css|woff2?|png|jpe?g|gif|svg|task|wasm)$ {
+    include /etc/nginx/snippets/security-headers.conf;
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+  }
+
+  # Never cache the entry document so new deploys are picked up immediately.
+  location = /index.html {
+    include /etc/nginx/snippets/security-headers.conf;
+    expires -1;
+    add_header Cache-Control "no-cache";
+  }
+
+  # SPA fallback: unknown routes (/learn, /play, /lessons/:id) resolve to the app shell.
+  location / {
+    include /etc/nginx/snippets/security-headers.conf;
+    try_files $uri $uri/ /index.html;
+  }
+}
+EOF
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
