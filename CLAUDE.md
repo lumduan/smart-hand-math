@@ -508,5 +508,26 @@ these migrations:
 | DaisyUI theme | `cupcake` / `pastel` | ✅ `cupcake` ([ADR-0006](docs/plans/adr/ADR-0006-daisyui-cupcake-theme.md)) | — |
 | i18n | Centralized string dictionary (§7) | ✅ `src/i18n/strings.ts` + `useStrings()`; persisted `locale`; **full `en` + `th`** (Thai: Mitr font + device TTS, Phase 8.4) | — |
 | Audio | `howler.js` | ✅ Synthesized Web Audio ([ADR-0007](docs/plans/adr/ADR-0007-web-audio-synthesis.md); Howler + mp3 removed) | — |
+| **Offline / PWA** | *(not in this blueprint — added in Phase 6)* | ✅ **Working since v1.1.2.** `vite-plugin-pwa` (`registerType: 'autoUpdate'`); 47-entry precache; model/wasm runtime-cached `CacheFirst`. **Broken from v1.0.0 to v1.1.2** — see the ⚠️ below. | Blueprint §3/§9 still don't mention the PWA at all; document it there by design. |
+| **Production deploy** | *(not in this blueprint)* | ✅ `handmath.org` = the static image on EC2 behind a Cloudflare Tunnel, sharing a box with opendys ([DEPLOY-AWS.md](DEPLOY-AWS.md), since 2026-07-15) | Blueprint §10 covers Docker but not where this actually runs. `localhost:5173` is now dev-only — handmath.org no longer serves the dev server. |
 
 > When you complete any row above, flip its state to ✅ in this table.
+
+> ⚠️ **A "healthy" service worker proves nothing — cut the network.** From v1.0.0 to v1.1.2 the PWA
+> precached **nothing** and nobody noticed, because the failure is invisible: `assets/favicon.svg`
+> was in the precache manifest twice (once via `globPatterns: '**/*.svg'` with `revision: null`, once
+> as the webmanifest icon with a revision). Workbox rejects conflicting entries for one URL, and
+> `precacheAndRoute` runs inside the generated `sw.js`'s **async AMD factory**, so the throw was
+> swallowed — taking the install handler *and every route registered after it* with it. The SW still
+> installed, activated, reported healthy and controlled every page while caching nothing. The site
+> worked fine; it just had no offline support, and navigations silently fell through to the network.
+>
+> `vite.config.ts` now sets `globIgnores: ['assets/favicon.svg']`. Adding any file that **both** a
+> glob and the manifest reference will reintroduce it. Guards, cheapest first:
+> `curl -s <origin>/sw.js | grep -o '{url:"[^"]*"' | { sort -u | wc -l; }` must equal the unquoted
+> count — then actually go offline and reload. `caches.keys()` returning `[]` is the tell.
+>
+> Related: `sw.js` / `registerSW.js` are **not** content-hashed, so the image serves them
+> `Cache-Control: no-cache`. That is load-bearing *only because the precache works* — with it
+> long-cached, a returning visitor is pinned to their precached shell permanently. See
+> [DEPLOY-AWS.md](DEPLOY-AWS.md).
