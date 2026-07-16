@@ -62,18 +62,33 @@ brief window.
    checks reachability, the production build, the precache manifest, `sw.js` caching, CSP,
    `Permissions-Policy` (`camera` / `autoplay`), SPA fallback, and edge injection. It detects
    whether it's talking to the origin or Cloudflare and adjusts expectations. Non-zero exit on
-   any failure:
+   any failure.
+
+   The box is provisioned with **Docker only — there is no repo checkout on it**, so fetch the
+   script rather than trying to run it from a working copy. `:8081` is bound to loopback, so this
+   has to run *on* the box; the EIP window is also the only time it has the IPv4 to fetch anything:
    ```bash
-   ./scripts/verify-deploy.sh http://127.0.0.1:8081   # on the box
-   curl -sI http://127.0.0.1:8080/ | head -1          # opendys still 200 — no collision
+   curl -fsSL https://raw.githubusercontent.com/lumduan/smart-hand-math/main/scripts/verify-deploy.sh \
+     | bash -s http://127.0.0.1:8081
    ```
-   Run it against the public URL too once the tunnel is pointed at the new container:
+   **Then check the neighbour.** This instance also runs
+   [opendys](https://github.com/lumduan/opendys) on `:8080`, and it has its own script — use it
+   instead of a `curl -I` glance, because the ways a deploy here could hurt it are not visible in a
+   status line (a port collision, or the 1 GB box running out of memory and the kernel picking a
+   victim). It also checks things only opendys knows about, like whether its `/api` proxy is still
+   served rather than swallowed by its SPA fallback, and whether `TYPHOON_API` survived:
    ```bash
-   ./scripts/verify-deploy.sh https://handmath.org
+   curl -fsSL https://raw.githubusercontent.com/lumduan/opendys/main/scripts/verify-deploy.sh \
+     | bash -s http://127.0.0.1:8080
    ```
-   Every check is exercised against a deliberately-broken deployment by
-   [`scripts/test-verify-deploy.sh`](scripts/test-verify-deploy.sh) — because the earlier version
-   of this step was a pipeline that could only ever print "pass" (see the note below).
+   Once the tunnel points at the new container, run both against their public URLs from anywhere:
+   ```bash
+   ./scripts/verify-deploy.sh https://handmath.org                    # from a checkout
+   ./scripts/verify-deploy.sh https://opendys.com                     # opendys repo's copy
+   ```
+   Every check in both is exercised against a deliberately-broken deployment by each repo's
+   `scripts/test-verify-deploy.sh` — because the earlier version of this step was a pipeline that
+   could only ever print "pass" (see the note below).
 
    **`verify-deploy.sh` passing does not mean the PWA works** — it can only read headers and the
    manifest. The one test that counts is cutting the network: in devtools,
