@@ -523,9 +523,9 @@ these migrations:
 > worked fine; it just had no offline support, and navigations silently fell through to the network.
 >
 > `vite.config.ts` now sets `globIgnores: ['assets/favicon.svg']`. Adding any file that **both** a
-> glob and the manifest reference will reintroduce it. Guards, cheapest first:
-> `curl -s <origin>/sw.js | grep -o '{url:"[^"]*"' | { sort -u | wc -l; }` must equal the unquoted
-> count — then actually go offline and reload. `caches.keys()` returning `[]` is the tell.
+> glob and the manifest reference will reintroduce it. `./scripts/verify-deploy.sh <origin>` catches
+> it — but **no header check can prove the PWA works**; only cutting the network can. `caches.keys()`
+> returning `[]` is the tell.
 >
 > Related: `sw.js` / `registerSW.js` are **not** content-hashed, so the image serves them
 > `Cache-Control: no-cache`. That is load-bearing *only because the precache works* — with it

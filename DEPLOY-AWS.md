@@ -58,18 +58,27 @@ brief window.
    sudo docker run -d --name smart-hand-math --restart unless-stopped \
      -p 127.0.0.1:8081:8080 ghcr.io/lumduan/smart-hand-math:v1.1.2
    ```
-4. **Verify** before releasing the IP:
+4. **Verify** before releasing the IP — [`scripts/verify-deploy.sh`](scripts/verify-deploy.sh)
+   checks reachability, the production build, the precache manifest, `sw.js` caching, CSP,
+   `Permissions-Policy` (`camera` / `autoplay`), SPA fallback, and edge injection. It detects
+   whether it's talking to the origin or Cloudflare and adjusts expectations. Non-zero exit on
+   any failure:
    ```bash
-   curl -sI http://127.0.0.1:8081/ | head -1          # HTTP/1.1 200 OK
-   curl -sI http://127.0.0.1:8081/sw.js | grep -i cache-control   # no-cache
+   ./scripts/verify-deploy.sh http://127.0.0.1:8081   # on the box
    curl -sI http://127.0.0.1:8080/ | head -1          # opendys still 200 — no collision
-
-   # The PWA is only as good as its precache manifest: a single duplicate URL makes workbox
-   # throw inside sw.js's AMD factory, which silently skips the install handler and every
-   # route after it (see the note below). Counts must match.
-   curl -s http://127.0.0.1:8081/sw.js | grep -o '{url:"[^"]*"' | wc -l        # entries
-   curl -s http://127.0.0.1:8081/sw.js | grep -o '{url:"[^"]*"' | sort -u | wc -l  # must equal
    ```
+   Run it against the public URL too once the tunnel is pointed at the new container:
+   ```bash
+   ./scripts/verify-deploy.sh https://handmath.org
+   ```
+   Every check is exercised against a deliberately-broken deployment by
+   [`scripts/test-verify-deploy.sh`](scripts/test-verify-deploy.sh) — because the earlier version
+   of this step was a pipeline that could only ever print "pass" (see the note below).
+
+   **`verify-deploy.sh` passing does not mean the PWA works** — it can only read headers and the
+   manifest. The one test that counts is cutting the network: in devtools,
+   `(await caches.keys()).length` must be `> 0`, then Network → Offline → reload → the app must
+   still render.
 5. **Release the Elastic IP** — *release*, not just disassociate: an idle EIP still bills.
    The site keeps serving; the tunnel is outbound over IPv6 and never needed the IP.
 
@@ -115,14 +124,22 @@ sudo docker run -d --name smart-hand-math --restart unless-stopped \
   caching nothing**, so nothing looks wrong: the site works, it just has no offline support and
   every navigation quietly hits the network. `vite.config.ts` now sets
   `globIgnores: ['assets/favicon.svg']`. Adding any file that both a glob and the manifest reference
-  will reintroduce it — the entries/unique check above is the cheap guard.
+  will reintroduce it — `scripts/verify-deploy.sh` catches it.
 
-  **The real acceptance test is cutting the network**, since a healthy-looking SW proves nothing:
+  **The real acceptance test is still cutting the network**, since a healthy-looking SW proves
+  nothing and no header check can see this:
   ```bash
   # in a browser devtools console on https://handmath.org, after a load or two:
   (await caches.keys()).length          # must be > 0
   # then: DevTools → Network → Offline → reload → the app must still render
   ```
+- **Write verify checks that you have watched fail.** The first version of the verify step here
+  ended in `... | grep -o X | sed ... || echo FAIL`. A pipeline's exit status is its **last**
+  command's, and `sed` succeeds on empty input, so the `||` never fired — and a sibling check using
+  `uniq -d && echo "DUPLICATE"` printed `DUPLICATE STILL PRESENT` on a perfectly good deploy, since
+  `uniq` exits 0 whether or not it prints anything. Both were noise pretending to be verification.
+  `scripts/verify-deploy.sh` therefore ends every check in an explicit `[ ... ]` or `grep -q`, and
+  `scripts/test-verify-deploy.sh` serves deliberately-broken variants to prove each one trips.
 - **Cloudflare Web Analytics is OFF for `handmath.org` — keep it that way.** Disabled 2026-07-15
   (also on the `opendys.com` zone). When enabled, Cloudflare injects
   `static.cloudflareinsights.com/beacon.min.js` into the HTML **at the edge**, which would make the
