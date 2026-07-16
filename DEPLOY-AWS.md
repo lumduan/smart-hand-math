@@ -53,16 +53,22 @@ brief window.
    > `AWS-StartNonInteractiveCommands` document doesn't exist in `ap-southeast-7`.
 3. On the box — pull and (re)create. The image is **public**, so no registry login:
    ```bash
-   sudo docker pull ghcr.io/lumduan/smart-hand-math:v1.1.0
+   sudo docker pull ghcr.io/lumduan/smart-hand-math:v1.1.2
    sudo docker rm -f smart-hand-math 2>/dev/null || true
    sudo docker run -d --name smart-hand-math --restart unless-stopped \
-     -p 127.0.0.1:8081:8080 ghcr.io/lumduan/smart-hand-math:v1.1.0
+     -p 127.0.0.1:8081:8080 ghcr.io/lumduan/smart-hand-math:v1.1.2
    ```
 4. **Verify** before releasing the IP:
    ```bash
    curl -sI http://127.0.0.1:8081/ | head -1          # HTTP/1.1 200 OK
    curl -sI http://127.0.0.1:8081/sw.js | grep -i cache-control   # no-cache
    curl -sI http://127.0.0.1:8080/ | head -1          # opendys still 200 — no collision
+
+   # The PWA is only as good as its precache manifest: a single duplicate URL makes workbox
+   # throw inside sw.js's AMD factory, which silently skips the install handler and every
+   # route after it (see the note below). Counts must match.
+   curl -s http://127.0.0.1:8081/sw.js | grep -o '{url:"[^"]*"' | wc -l        # entries
+   curl -s http://127.0.0.1:8081/sw.js | grep -o '{url:"[^"]*"' | sort -u | wc -l  # must equal
    ```
 5. **Release the Elastic IP** — *release*, not just disassociate: an idle EIP still bills.
    The site keeps serving; the tunnel is outbound over IPv6 and never needed the IP.
@@ -80,7 +86,7 @@ pushes `ghcr.io/lumduan/smart-hand-math:vX.Y.Z`. Then run the EIP window above w
 ```bash
 sudo docker rm -f smart-hand-math
 sudo docker run -d --name smart-hand-math --restart unless-stopped \
-  -p 127.0.0.1:8081:8080 ghcr.io/lumduan/smart-hand-math:v1.0.0
+  -p 127.0.0.1:8081:8080 ghcr.io/lumduan/smart-hand-math:v1.1.0
 ```
 
 ## Notes
@@ -100,6 +106,23 @@ sudo docker run -d --name smart-hand-math --restart unless-stopped \
   `registerSW.js` registers with the default `updateViaCache: 'imports'`, so browsers bypass their
   HTTP cache for the SW script anyway. `index.html` keeps `no-cache` (`DYNAMIC`), which is what
   makes a new deploy visible immediately.
+- **A duplicate precache entry silently disables the whole service worker.** Cost us a broken PWA
+  from `1.0.0` to `1.1.2`: `assets/favicon.svg` was precached both by `globPatterns: '**/*.svg'`
+  (`revision: null`) and as the webmanifest icon (with a revision). Workbox rejects conflicting
+  entries for the same URL, and because `precacheAndRoute` runs inside the generated `sw.js`'s async
+  AMD factory, the throw is swallowed — no install handler, no navigation route, no `/models/`
+  runtime cache. **The SW still installs, activates, reports healthy and controls every page while
+  caching nothing**, so nothing looks wrong: the site works, it just has no offline support and
+  every navigation quietly hits the network. `vite.config.ts` now sets
+  `globIgnores: ['assets/favicon.svg']`. Adding any file that both a glob and the manifest reference
+  will reintroduce it — the entries/unique check above is the cheap guard.
+
+  **The real acceptance test is cutting the network**, since a healthy-looking SW proves nothing:
+  ```bash
+  # in a browser devtools console on https://handmath.org, after a load or two:
+  (await caches.keys()).length          # must be > 0
+  # then: DevTools → Network → Offline → reload → the app must still render
+  ```
 - **Cloudflare Web Analytics is OFF for `handmath.org` — keep it that way.** Disabled 2026-07-15
   (also on the `opendys.com` zone). When enabled, Cloudflare injects
   `static.cloudflareinsights.com/beacon.min.js` into the HTML **at the edge**, which would make the
